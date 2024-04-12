@@ -1,0 +1,10 @@
+{
+    "password" : "",
+    "address" : "",
+    "rcon_port" : "11776",
+    "logging" : "basic",
+    "aliases" : [
+        {"say" : "Server.Say"},
+        {"kick" : "Server.KickPlayer"}
+    ]   
+}
