@@ -27,7 +27,7 @@ char* Append(const char* destination, const char* source);
 const char* FileLineFunc(const char* file, int line, const char* function);
 
 void LogSocketError(const char* msg, int wsagla);
-// overload for just a message to be output to std::cerr.
+// overload for a message to be output to std::cerr.
 void LogSocketError(const char* msg);
 // overload for more robust and technical error logging.
 void LogSocketError(const char* msg, int wsagla, const char* file, int line, const char* function);

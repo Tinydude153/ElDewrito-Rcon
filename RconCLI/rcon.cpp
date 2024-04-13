@@ -48,6 +48,7 @@ bool Rcon::ReadConfig() {
     char* jsonPassword = json.GetValue("password");
     char* jsonAddress = json.GetValue("address");
     char* jsonRconPort = json.GetValue("rcon_port");
+    char* jsonBinDump = json.GetValue("output_binary_dump");
 
     if (!jsonPassword) {
         Rcon::Fail = true;
@@ -60,6 +61,9 @@ bool Rcon::ReadConfig() {
     if (!jsonRconPort) {
         Rcon::Fail = true;
         return false;  
+    }
+    if (!strcmp(jsonBinDump, "true")) {
+        Rcon::BinDump = true;
     }
 
     Rcon::Password = (const char*)jsonPassword;
@@ -119,6 +123,13 @@ void Rcon::RconLoop() {
 
     std::thread receiveThread;
     if (!Rcon::FailWebsocket) receiveThread = std::thread(&Websocket::threadedOutput, &*Rcon::Websock);
+
+    // Binary server output dump in config is true.
+    if (!Rcon::FailWebsocket) {
+        if (Rcon::BinDump) {
+            Rcon::Websock->DumpBinary = true;
+        }
+    }
     
     // Start command-line parsing.
     Command Cmd;

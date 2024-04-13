@@ -25,6 +25,7 @@ class Rcon {
     public:
     Websocket* Websock;
     Command::key_callback GetCallback();
+    bool BinDump = false;
     bool Fail = false;
     bool FailWebsocket = false;
     const char* Address;
