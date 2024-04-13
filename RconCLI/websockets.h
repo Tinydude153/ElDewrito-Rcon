@@ -39,6 +39,8 @@ class Websocket {
         INVALID
     } OPCODE_TYPE;
 
+    // If true, dumps websocket output to a binary file.
+    bool DumpBinary = false;
     // For logging.
     std::stringstream LogSs;
     // Stringstream for each frame; this is only logged when there is an invalid frame error.

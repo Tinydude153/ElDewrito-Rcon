@@ -600,15 +600,35 @@ char* Websocket::GetCommandBuffer(Command* CommandInstance) {
 // Function for looping receiving data on an established socket; for use in a separate thread.
 void Websocket::threadedOutput() {
     
-    WindowsConsole::Console current_console;
+    std::ofstream binfile;
     char* output;
-    char* buf;
-    int line_offset = 0;
     while (Websocket::CommandBuf->Active) {
 
         output = Websocket::receiveData();
         if (output) {   
+            
+            if (Websocket::DumpBinary) {
 
+                binfile = std::ofstream("output_binary_dump.bin", std::ofstream::app | std::ofstream::binary);
+                if (binfile.fail()) {
+
+                    binfile.clear();
+                    binfile.write(output, strlen(output) + 1);
+                
+                } else {
+                    
+                    binfile.write(output, strlen(output) + 1);
+                
+                }
+
+            } else {
+
+                if (binfile.is_open()) {
+                    binfile.close();
+                }
+
+            }
+            binfile.write(output, strlen(output) + 1);
             printf("\e7"); // Save cursor position.
             printf("\n");
             printf("\e[G"); // Move to beginning of line.
@@ -627,6 +647,7 @@ void Websocket::threadedOutput() {
         free(output);
 
     }
+    binfile.close();
 
 }
 
