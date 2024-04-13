@@ -2,7 +2,7 @@
     "password" : "password",
     "address" : "127.0.0.1",
     "rcon_port" : "11776",
-    "output_binary_dump" : "false",
+    "output_binary_dump" : true,
     "logging" : "basic",
     "aliases" : [
         {"say" : "Server.Say"},

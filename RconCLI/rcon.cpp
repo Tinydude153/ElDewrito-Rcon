@@ -48,7 +48,7 @@ bool Rcon::ReadConfig() {
     char* jsonPassword = json.GetValue("password");
     char* jsonAddress = json.GetValue("address");
     char* jsonRconPort = json.GetValue("rcon_port");
-    char* jsonBinDump = json.GetValue("output_binary_dump");
+    int jsonBinDump = json.GetBoolValue("output_binary_dump");
 
     if (!jsonPassword) {
         Rcon::Fail = true;
@@ -62,7 +62,7 @@ bool Rcon::ReadConfig() {
         Rcon::Fail = true;
         return false;  
     }
-    if (!strcmp(jsonBinDump, "true")) {
+    if (jsonBinDump == 1) {
         Rcon::BinDump = true;
     }
 
