@@ -18,7 +18,8 @@ class JSON {
         FLOAT,
         BRACKET_OPEN,
         BRACKET_CLOSED,
-        BOOLEAN,
+        BOOLEAN_TRUE,
+        BOOLEAN_FALSE,
         COLON,
         COMMA,
         NULL_TYPE,
@@ -34,7 +35,8 @@ class JSON {
         JSON_ARRAY,
         JSON_ARRAY_LAST,
         JSON_NUMBER,
-        JSON_BOOLEAN,
+        JSON_BOOLEAN_TRUE,
+        JSON_BOOLEAN_FALSE,
         JSON_NULL
 
     } JSON_TYPE;
@@ -47,6 +49,8 @@ class JSON {
         bool objectFirst = false;
         bool arrayLast = false;
         bool arrayFirst = false;
+        bool boolean = false;
+        bool booleanValue = false;
         char* key = NULL; 
         char* value = NULL;
         int num_Value;
@@ -145,6 +149,8 @@ class JSON {
     ~JSON();
     // Gets and returns the value of the key passed to the function. Returns the value if successful, NULL otherwise.
     char* GetValue(const char* key);
+    // Returns 1 if true, 0 if false, and -1 if key not found.
+    int GetBoolValue(const char* key);
 
     // Interface for parsing multiple JSON files/text under one instantiation //
 

@@ -175,6 +175,38 @@ JSON::token* JSON::ParseToken(char* contents) {
 
                 break;
 
+            case 't':
+
+                if ((*c + 1) == 'r' && (*c + 2) == 'u' && (*c + 3) == 'e') {
+
+                    Token->type = JSON::TOKEN_TYPE::BOOLEAN_TRUE;
+                    Token->position = i;
+                    Token->next = new token;
+                    Token = Token->next;
+                    i = i + 3;
+                    break;
+
+                } else { 
+                    i++;
+                    break;
+                }
+
+            case 'f':
+
+                if ((*c + 1) == 'a' && (*c + 2) == 'l' && (*c + 3) == 's' && (*c + 4) == 'e') {
+
+                    Token->type = JSON::TOKEN_TYPE::BOOLEAN_FALSE;
+                    Token->position = i;
+                    Token->next = new token;
+                    Token = Token->next;
+                    i = i + 4;
+                    break;
+
+                } else { 
+                    i++;
+                    break;
+                }
+
             default:
 
                 i++;
@@ -488,7 +520,27 @@ void JSON::Colon(JSON_MAP* jsonmap, token* token_link, char* contents) {
 
         free(numberChar);
 
-    } else { return; }
+    } else if (nextToken->type == JSON::TOKEN_TYPE::BOOLEAN_TRUE) {
+
+        jsonmap->value = NULL;
+        jsonmap->boolean = true;
+        jsonmap->booleanValue = true;
+        jsonmap->next = new JSON_MAP;
+        jsonmap = jsonmap->next;
+
+    } else if (nextToken->type == JSON::TOKEN_TYPE::BOOLEAN_FALSE) {
+
+        jsonmap->value = NULL;
+        jsonmap->boolean = true;
+        jsonmap->booleanValue = false;
+        jsonmap->next = new JSON_MAP;
+        jsonmap = jsonmap->next;
+
+    } else {
+
+        return;
+
+    }
 
 }
 
@@ -561,8 +613,11 @@ void JSON::PrintInformation(JSON::JSON_MAP* jsonmap) {
             case JSON_NUMBER:   
                 printf("\nTYPE: JSON_NUMBER");
                 break;
-            case JSON_BOOLEAN: 
-                printf("\nTYPE: JSON_BOOLEAN");
+            case JSON_BOOLEAN_TRUE: 
+                printf("\nTYPE: JSON_BOOLEAN_TRUE");
+                break;
+            case JSON_BOOLEAN_FALSE: 
+                printf("\nTYPE: JSON_BOOLEAN_FALSE");
                 break;
             case JSON_NULL:
                 printf("\nTYPE: JSON_NULL");
@@ -660,6 +715,24 @@ JSON::JSON_MAP* JSON::ParseKey(JSON::token* token_list, char* contents) {
             case JSON::TOKEN_TYPE::BRACKET_CLOSED:
 
                 it_json->type = JSON::JSON_TYPE::JSON_ARRAY_LAST;
+                it_json->next = new JSON::JSON_MAP;
+                it_json = it_json->next;
+                token_list = token_list->next;
+                continue;
+
+            case JSON::TOKEN_TYPE::BOOLEAN_TRUE:
+
+                it_json->type = JSON::JSON_TYPE::JSON_BOOLEAN_TRUE;
+                it_json->boolean = true;
+                it_json->next = new JSON::JSON_MAP;
+                it_json = it_json->next;
+                token_list = token_list->next;
+                continue;
+
+            case JSON::TOKEN_TYPE::BOOLEAN_FALSE:
+
+                it_json->type = JSON::JSON_TYPE::JSON_BOOLEAN_FALSE;
+                it_json->boolean = true;
                 it_json->next = new JSON::JSON_MAP;
                 it_json = it_json->next;
                 token_list = token_list->next;
@@ -784,6 +857,41 @@ char* JSON::GetValue(const char* key) {
     }
 
     return NULL;
+
+}
+
+// Returns 1 if true, 0 if false, and -1 if key not found.
+int JSON::GetBoolValue(const char* key) {
+
+    char* value;
+    if (JSON::JsonMap->next) {
+
+        while (JSON::JsonMap->next != NULL) {
+
+            if (JSON::JsonMap->key) {
+
+                if (!strncmp(JSON::JsonMap->key, key, strlen(key))) {
+                    
+                    if (JSON::JsonMap->boolean == true) {
+
+                        // Value is of boolean type, so return the corresponding boolean value.
+                        if (JSON::JsonMap->booleanValue == true) {
+                            return 1;
+                        } else { return 0; }
+
+                    } else { JSON::JsonMap = JSON::JsonMap->next; }
+
+                } else { JSON::JsonMap = JSON::JsonMap->next; }
+
+            } else { JSON::JsonMap = JSON::JsonMap->next; }
+
+            if (JSON::JsonMap->next == NULL) return -1;
+
+        }
+
+    }
+
+    return -1;
 
 }
 
