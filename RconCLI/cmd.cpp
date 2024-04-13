@@ -310,6 +310,7 @@ void Command::Update(const char* input) {
 
 }
 
+// Prints the hex value of a character.
 void Command::Update(char input) {
 
     printf("\e7"); // Save cursor position.
@@ -346,10 +347,11 @@ void Command::Input() {
 
         SkipSwitch = false;
         Command::Character = (char)getch();
-        Command::Update(Command::Character);
+        // Print hex value of current character in top right corner.
+        //Command::Update(Command::Character);
 
         // Playing with ""duplexing.""
-        if (!(Command::Cursor % ((Command::MainConsole.Size().columns / 2) - 1)) && Command::Cursor) std::cout << '\n';
+        //if (!(Command::Cursor % ((Command::MainConsole.Size().columns / 2) - 1)) && Command::Cursor) std::cout << '\n';
 
         // Try keys in Command::callback_map prior to regular key processing, in case a key's action is overrided or a
         // key is added by CustomKey().
@@ -388,25 +390,25 @@ void Command::Input() {
                 case Command::KEY_VALUE::ARROW_LEFT:
 
                     Command::ArrowLeft(Command::Character);
-                    Command::PrintInformation();
+                    //Command::PrintInformation();
                     break;
 
                 case Command::KEY_VALUE::ARROW_RIGHT:
 
                     Command::ArrowRight(Command::Character);
-                    Command::PrintInformation();
+                    //Command::PrintInformation();
                     break;
 
                 case Command::KEY_VALUE::ARROW_UP:
                     
                     Command::ArrowUp(Command::Character);
-                    Command::PrintInformation();
+                    //Command::PrintInformation();
                     return;
 
                 case Command::KEY_VALUE::ARROW_DOWN:
 
                     Command::ArrowDown(Command::Character);
-                    Command::PrintInformation();
+                    //Command::PrintInformation();
                     return;
 
                 default: break;
@@ -451,7 +453,7 @@ void Command::Input() {
         if (Command::EOS) Command::Cursor++;
 
         //Command::Update();
-        Command::PrintInformation();
+        //Command::PrintInformation();
 
     }
 
