@@ -36,19 +36,19 @@ Rcon::Rcon() {
 
 bool Rcon::ReadConfig() {
 
-    JSON json;
+    JSON* json;
     try {
 
-        json = JSON("config/config.json", true);
+        json = new JSON("config/config.json", true);
 
     } catch (const std::exception& e) {
         std::cerr << '[' <<__FUNCTION__ << "] " << e.what() << '\n';
         return false;
     }
-    char* jsonPassword = json.GetValue("password");
-    char* jsonAddress = json.GetValue("address");
-    char* jsonRconPort = json.GetValue("rcon_port");
-    int jsonBinDump = json.GetBoolValue("output_binary_dump");
+    char* jsonPassword = json->GetValue("password");
+    char* jsonAddress = json->GetValue("address");
+    char* jsonRconPort = json->GetValue("rcon_port");
+    int jsonBinDump = json->GetBoolValue("output_binary_dump");
 
     if (!jsonPassword) {
         Rcon::Fail = true;
@@ -70,6 +70,7 @@ bool Rcon::ReadConfig() {
     Rcon::Address = (const char*)jsonAddress;
     Rcon::RconPort = strtol((const char*)jsonRconPort, NULL, 10);
 
+    delete json;
     return true;
 }
 
@@ -138,7 +139,9 @@ void Rcon::RconLoop() {
     GetRcon::rconref = this;
     Command::key_callback funcptr = &Rcon::keycb_f5;
     Cmd.CustomKey(Rcon::Keycode::F5, funcptr);
-    Rcon::Websock->GetCommandBuffer(&Cmd);
+    if (!Rcon::FailWebsocket) {
+        Rcon::Websock->GetCommandBuffer(&Cmd);
+    }
     while (Cmd.Active) {
 
         // Initialize command input.

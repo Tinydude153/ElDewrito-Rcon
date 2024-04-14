@@ -458,14 +458,18 @@ void JSON::BracketOpen(JSON::JSON_MAP*& jsonmap, JSON::token*& token_link, char*
     // (the keys/values are members of the array that is the value of jsonmap->key)
     JSON::JSON_MAP* arrayMap = ParseKey(*&arrayList, arrayString);
 
-    jsonmap->members = arrayMap;
-    jsonmap->members->arrayFirst = true;
+    // Free arrayString because it returns a char* that is heap-allocated by JsonCopy()
+    free(arrayString);
+    //delete arrayList;
+
+    if (arrayMap) {
+        jsonmap->members = arrayMap;
+        jsonmap->members->arrayFirst = true;
+    }
 
     // Move token_link forward by the corresponding count returned by ExtractToken().
     jsonmap->next = new JSON_MAP;
     jsonmap = jsonmap->next;
-    //printf("\nARRAY: %s", arrayString);
-    //JSON::index_Forward(token_link, tokenCount);
 
 }
 
@@ -493,13 +497,18 @@ void JSON::BraceOpen(JSON::JSON_MAP*& jsonmap, JSON::token* token_link, char* co
     // (the keys/values are members of the array that is the value of jsonmap->key)
     JSON::JSON_MAP* objectMap = ParseKey(*&objectList, objectString);
 
-    jsonmap->members = objectMap;
-    jsonmap->members->objectFirst = true;
+    // Free objectList and objectString as both are no longer needed.
+    free(objectString);
+    //delete objectList;
+
+    if (objectMap) {
+        jsonmap->members = objectMap;
+        jsonmap->members->objectFirst = true;
+    }
 
     // Move forward jsonmap.
     jsonmap->next = new JSON_MAP;
     jsonmap = jsonmap->next;
-    //printf("\nOBJECT: %s", objectString);
 
 }
 
@@ -1024,25 +1033,19 @@ const char* JSON::ParseContainer(const char* container, const char* key) {
 
 }
 
+JSON::token::~token() {
+
+    token* tmp = NULL;
+    while (this->next != NULL) {
+        tmp = this->next;
+        delete this->next;
+        tmp = tmp->next;
+    }
+}
+
 // Deconstructor; frees linked lists of structs and data that may have been heap-allocated within.
 JSON::~JSON() {
 
-    /*
-    if (JSON::JsonMap) {
-        
-        while (JSON::JsonMap->next != NULL) {
+    //delete JsonMap;
 
-            if (JSON::JsonMap->value) free(JSON::JsonMap->value);
-            if (JSON::JsonMap->key) free(JSON::JsonMap->key);
-            if (JSON::JsonMap) {
-                delete JSON::JsonMap;
-            } else { break; }
-            if (JSON::JsonMap->next) {
-                JSON::JsonMap = JSON::JsonMap->next;
-            } else { break; }
-
-        }
-
-    }
-    */
 }

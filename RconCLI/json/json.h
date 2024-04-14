@@ -58,6 +58,10 @@ class JSON {
         JSON_MAP* members = NULL; // For any members, e.g., value is an array or object.
         JSON_MAP* next = NULL;
 
+        ~JSON_MAP() {
+            delete this->next;
+        }
+
     };
 
     struct token {
@@ -67,10 +71,14 @@ class JSON {
         char* value = NULL;
         int number = 0;
         bool number_State = false;
-        JSON_MAP* link;
         TOKEN_TYPE type;
+        token* next = {};
 
-        token* next = NULL;
+        token() {
+            next = {};
+            value = {};
+        }
+        ~token();
 
     };
 
