@@ -99,7 +99,6 @@ JSON::token* JSON::ParseToken(char* contents) {
                 Token = Token->next;
 
                 // move *c to 1 character beyond quotation marks indicating string
-
                 while (count != str_i) {
                     
                     if (*c == '\0') return 0; // error: unexpected null termination
@@ -177,12 +176,13 @@ JSON::token* JSON::ParseToken(char* contents) {
 
             case 't':
 
-                if ((*c + 1) == 'r' && (*c + 2) == 'u' && (*c + 3) == 'e') {
+                if (*(c + 1) == 'r' && *(c + 2) == 'u' && *(c + 3) == 'e') {
 
                     Token->type = JSON::TOKEN_TYPE::BOOLEAN_TRUE;
                     Token->position = i;
                     Token->next = new token;
                     Token = Token->next;
+                    i++;
                     break;
 
                 } else { 
@@ -192,15 +192,16 @@ JSON::token* JSON::ParseToken(char* contents) {
 
             case 'f':
 
-                if ((*c + 1) == 'a' && (*c + 2) == 'l' && (*c + 3) == 's' && (*c + 4) == 'e') {
+                if (*(c + 1) == 'a' && *(c + 2) == 'l' && *(c + 3) == 's' && *(c + 4) == 'e') {
 
                     Token->type = JSON::TOKEN_TYPE::BOOLEAN_FALSE;
                     Token->position = i;
                     Token->next = new token;
                     Token = Token->next;
+                    i++;    
                     break;
 
-                } else { 
+                } else {
                     i++;
                     break;
                 }
