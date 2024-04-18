@@ -84,12 +84,10 @@ class JSON {
 
     JSON_MAP* JsonMap = NULL;
 
-    // Writes and formats JSON_MAP struct information according to JSON specification to make a valid JSON file.
-    int OutputJson(JSON_MAP*& jsonmap);
-
     // Prints all available information on a given JSON_MAP struct.
     void PrintInformation(JSON_MAP* jsonmap);
-    
+    void PrintTokens(token* token_list);
+
     // Locates a specified character in a supplied character array starting from a specified position in the array.
     // Returns the position of the token if found, otherwise returns -1.
     int TokenPosition(int x, char c, char* contents);
@@ -149,7 +147,7 @@ class JSON {
     // Main Interface //
 
     public:
-
+    
     // Constructor; takes the path to the JSON file as input.
     JSON(const char* path, bool isFile);
     JSON();
@@ -159,6 +157,9 @@ class JSON {
     char* GetValue(const char* key);
     // Returns 1 if true, 0 if false, and -1 if key not found.
     int GetBoolValue(const char* key);
+
+    // Writes and formats JSON_MAP struct information according to JSON specification to make a valid JSON file.
+    int OutputJson(JSON_MAP*& jsonmap);
 
     // Interface for parsing multiple JSON files/text under one instantiation //
 

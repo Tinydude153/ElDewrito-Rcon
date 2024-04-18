@@ -183,7 +183,6 @@ JSON::token* JSON::ParseToken(char* contents) {
                     Token->position = i;
                     Token->next = new token;
                     Token = Token->next;
-                    i = i + 3;
                     break;
 
                 } else { 
@@ -199,7 +198,6 @@ JSON::token* JSON::ParseToken(char* contents) {
                     Token->position = i;
                     Token->next = new token;
                     Token = Token->next;
-                    i = i + 4;
                     break;
 
                 } else { 
@@ -531,6 +529,7 @@ void JSON::Colon(JSON_MAP* jsonmap, token* token_link, char* contents) {
 
     } else if (nextToken->type == JSON::TOKEN_TYPE::BOOLEAN_TRUE) {
 
+        jsonmap->type = JSON::JSON_TYPE::JSON_BOOLEAN_TRUE;
         jsonmap->value = NULL;
         jsonmap->boolean = true;
         jsonmap->booleanValue = true;
@@ -539,6 +538,7 @@ void JSON::Colon(JSON_MAP* jsonmap, token* token_link, char* contents) {
 
     } else if (nextToken->type == JSON::TOKEN_TYPE::BOOLEAN_FALSE) {
 
+        jsonmap->type = JSON::JSON_TYPE::JSON_BOOLEAN_TRUE;
         jsonmap->value = NULL;
         jsonmap->boolean = true;
         jsonmap->booleanValue = false;
@@ -601,6 +601,9 @@ void JSON::PrintInformation(JSON::JSON_MAP* jsonmap) {
         printf("\n");
         if (jsonmap->key) printf("\nKEY: %s", jsonmap->key);
         if (jsonmap->value) printf("\nVALUE: %s", jsonmap->value);
+        if (jsonmap->boolean == true) {
+            (jsonmap->booleanValue == true) ? printf("\nVALUE: true") : printf("\nVALUE: false"); 
+        }
 
         switch (jsonmap->type) {
 
@@ -641,6 +644,7 @@ void JSON::PrintInformation(JSON::JSON_MAP* jsonmap) {
         if (jsonmap->objectLast == true) printf("\nobjectLast: TRUE");
         if (jsonmap->arrayFirst == true) printf("\narrayFirst: TRUE");
         if (jsonmap->arrayLast == true) printf("\narrayLast: TRUE");
+        (jsonmap->boolean == true) ? printf("\nisBoolean: TRUE") : printf("\nisBoolean: FALSE"); 
         if (jsonmap->memberCount) printf("\nmemberCount: %d", jsonmap->memberCount);
         if (jsonmap->members) {
             printf("\nmembers: VALID, %d", jsonmap->memberCount);
@@ -650,6 +654,61 @@ void JSON::PrintInformation(JSON::JSON_MAP* jsonmap) {
         } else { printf("\nnext: NULL"); }
         printf("\n");
 
+    }
+
+}
+
+void JSON::PrintTokens(token* token_list) {
+
+    if (token_list != NULL) {
+        while (token_list != NULL) {
+
+            switch (token_list->type) {
+
+                case JSON::TOKEN_TYPE::BOOLEAN_FALSE:
+                    printf("\nBOOLEAN_FALSE");
+                    break;
+                case JSON::TOKEN_TYPE::BOOLEAN_TRUE:
+                    printf("\nBOOLEAN_TRUE");
+                    break;
+                case JSON::TOKEN_TYPE::BRACE_OPEN:
+                    printf("\nBRACE_OPEN");
+                    break;
+                case JSON::TOKEN_TYPE::BRACE_CLOSED:
+                    printf("\nBRACE_CLOSED");
+                    break;
+                case JSON::TOKEN_TYPE::BRACKET_OPEN:
+                    printf("\nBRACKET_OPEN");
+                    break;
+                case JSON::TOKEN_TYPE::BRACKET_CLOSED:
+                    printf("\nBRACKET_CLOSED");
+                    break;
+                case JSON::TOKEN_TYPE::COLON:
+                    printf("\nCOLON");
+                    break;
+                case JSON::TOKEN_TYPE::STRING:
+                    printf("\nSTRING");
+                    break;
+                case JSON::TOKEN_TYPE::COMMA:
+                    printf("\nCOMMA");
+                    break;
+                case JSON::TOKEN_TYPE::FLOAT:
+                    printf("\nFLOAT");
+                    break;
+                case JSON::TOKEN_TYPE::NUMBER:
+                    printf("\nNUMBER");
+                    break;
+                case JSON::TOKEN_TYPE::NULL_TYPE:
+                    printf("\nNULL_TYPE");
+                    break;
+                case JSON::TOKEN_TYPE::OTHER:
+                    printf("\nOTHER");
+                    break;
+
+            }
+            token_list = token_list->next;
+
+        }
     }
 
 }
@@ -678,7 +737,7 @@ JSON::JSON_MAP* JSON::ParseKey(JSON::token* token_list, char* contents) {
 
                 } else if (tokenType == JSON::TOKEN_TYPE::COLON) {
 
-                    break;
+                    continue;
 
                 } else if (tokenType == JSON::TOKEN_TYPE::OTHER) {
 
@@ -768,46 +827,150 @@ int JSON::OutputJson(JSON::JSON_MAP*& jsonmap) {
 
     }
 
+    // For keeping track of the indentation count for formatting.
+    int indentTrack = 0;
+    // 4 spaces for a nicer looking "tab" (\t). 
+    const char* tab = "    ";
+
     while (jsonmap->next != NULL) {
 
-        if (jsonmap->type == JSON::JSON_TYPE::JSON_OBJECT) fprintf(jsonFile, "{\n");
+        if (jsonmap->type == JSON::JSON_TYPE::JSON_OBJECT) {
+            
+            for (int i = 0; i < indentTrack; i++) {
+                fprintf(jsonFile, tab);
+            }
+            indentTrack++;
+            fprintf(jsonFile, "{\n");
+        
+        }
         if (jsonmap->type == JSON::JSON_TYPE::JSON_OBJECT_LAST && jsonmap->next->type == JSON::JSON_TYPE::JSON_OBJECT) {
-
+            
+            if (indentTrack > 0) indentTrack--;
+            for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+            }
             fprintf(jsonFile, "},\n");
 
         } else if (jsonmap->type == JSON::JSON_TYPE::JSON_OBJECT_LAST && jsonmap->next->type != JSON::JSON_TYPE::JSON_OBJECT) { 
 
+            if (indentTrack > 0) indentTrack--;
+            for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+            }
             fprintf(jsonFile, "}\n"); 
 
         }
 
-        if (jsonmap->type == JSON::JSON_TYPE::JSON_ARRAY) fprintf(jsonFile, "\"%s\" : [\n", jsonmap->key);
+        if (jsonmap->type == JSON::JSON_TYPE::JSON_ARRAY) {
+
+            for (int i = 0; i < indentTrack; i++) {
+                fprintf(jsonFile, tab);
+            }
+            indentTrack++;
+            fprintf(jsonFile, "\"%s\" : [\n", jsonmap->key);
+            if (jsonmap->next->type != JSON::JSON_TYPE::JSON_OBJECT) indentTrack++;
+
+        }
         if (jsonmap->key && jsonmap->value) {
             
             if ((jsonmap->objectFirst == true && jsonmap->objectLast == true) || (jsonmap->arrayFirst == true && jsonmap->arrayLast == true)) {
 
-                fprintf(jsonFile, "\t\"%s\" : \"%s\"\n", jsonmap->key, jsonmap->value);
+                for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+                }
+                fprintf(jsonFile, "\"%s\" : \"%s\"\n", jsonmap->key, jsonmap->value);
 
             } else if ((jsonmap->objectFirst == true || jsonmap->arrayFirst == true) && (jsonmap->objectLast != true || jsonmap->arrayLast != true)) {
-
-                fprintf(jsonFile, "\t\"%s\" : \"%s\", \n", jsonmap->key, jsonmap->value);
+                
+                for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+                }
+                fprintf(jsonFile, "\"%s\" : \"%s\", \n", jsonmap->key, jsonmap->value);
 
             } else if (jsonmap->objectLast == true || jsonmap->arrayLast == true) { 
 
-                fprintf(jsonFile, "\t\"%s\" : \"%s\"\n", jsonmap->key, jsonmap->value); 
+                for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+                }
+                fprintf(jsonFile, "\"%s\" : \"%s\"\n", jsonmap->key, jsonmap->value); 
 
-            } else { fprintf(jsonFile, "\t\"%s\" : \"%s\", \n", jsonmap->key, jsonmap->value); }
+            } else { 
+
+                for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+                }
+                fprintf(jsonFile, "\"%s\" : \"%s\", \n", jsonmap->key, jsonmap->value); 
+            
+            }
+
+        } else if (jsonmap->key && jsonmap->boolean == true) {
+
+            if ((jsonmap->objectFirst == true && jsonmap->objectLast == true) || (jsonmap->arrayFirst == true && jsonmap->arrayLast == true)) {
+
+                for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+                }
+
+                if (jsonmap->booleanValue == true) {
+                    fprintf(jsonFile, "\"%s\" : true\n", jsonmap->key, jsonmap->value);
+                } else {
+                    fprintf(jsonFile, "\"%s\" : false\n", jsonmap->key, jsonmap->value);
+                } 
+
+            } else if ((jsonmap->objectFirst == true || jsonmap->arrayFirst == true) && (jsonmap->objectLast != true || jsonmap->arrayLast != true)) {
+                
+                for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+                }
+                
+                if (jsonmap->booleanValue == true) {
+                    fprintf(jsonFile, "\"%s\" : true,\n", jsonmap->key, jsonmap->value);
+                } else {
+                    fprintf(jsonFile, "\"%s\" : false,\n", jsonmap->key, jsonmap->value);
+                } 
+
+            } else if (jsonmap->objectLast == true || jsonmap->arrayLast == true) { 
+
+                for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+                }
+                
+                if (jsonmap->booleanValue == true) {
+                    fprintf(jsonFile, "\"%s\" : true\n", jsonmap->key, jsonmap->value);
+                } else {
+                    fprintf(jsonFile, "\"%s\" : false\n", jsonmap->key, jsonmap->value);
+                } 
+
+            } else { 
+
+                for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+                }
+                
+                if (jsonmap->booleanValue == true) {
+                    fprintf(jsonFile, "\"%s\" : true,\n", jsonmap->key, jsonmap->value);
+                } else {
+                    fprintf(jsonFile, "\"%s\" : false,\n", jsonmap->key, jsonmap->value);
+                } 
+            
+            }
 
         } else if (!jsonmap->key && jsonmap->value) {
 
             if ((jsonmap->objectFirst == true || jsonmap->arrayFirst == true) && (jsonmap->objectLast != true || jsonmap->arrayLast != true)) {
 
-                fprintf(jsonFile, "\t\"%s\", \n", jsonmap->value);
+                for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+                }
+                fprintf(jsonFile, "\"%s\", \n", jsonmap->value);
 
             } 
             if (jsonmap->objectLast == true || jsonmap->arrayLast == true) { 
 
-                fprintf(jsonFile, "\t\"%s\"\n", jsonmap->value); 
+                for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+                }
+                fprintf(jsonFile, "\"%s\"\n", jsonmap->value); 
 
             }
 
@@ -818,11 +981,19 @@ int JSON::OutputJson(JSON::JSON_MAP*& jsonmap) {
             jsonmap->next->type == JSON::JSON_TYPE::JSON_ARRAY || 
             jsonmap->next->type == JSON::JSON_TYPE::JSON_STRING)) {
 
-               fprintf(jsonFile, "\n], \n");
+                if (indentTrack > 0) indentTrack--;
+                for (int i = 0; i < indentTrack; i++) {
+                    fprintf(jsonFile, tab);
+                }
+                fprintf(jsonFile, "], \n");
 
         } else if (jsonmap->type == JSON::JSON_TYPE::JSON_ARRAY_LAST) { 
 
-            fprintf(jsonFile, "\n]\n"); 
+            if (indentTrack > 0) indentTrack--;
+            for (int i = 0; i < indentTrack; i++) {
+                fprintf(jsonFile, tab);
+            }
+            fprintf(jsonFile, "]\n"); 
 
         }
         
@@ -955,6 +1126,15 @@ JSON::JSON(const char* path, bool isFile) {
             char* jsonTrim = JSON::RemoveSpace((char*)jsonString);
             JSON::token* jsonTokens = ParseToken(jsonTrim);
             JSON::JsonMap = ParseKey(*&jsonTokens, jsonTrim); // JsonMap is a public JSON class member.
+
+            JSON::JSON_MAP* jsm = JSON::JsonMap;
+            while (jsm != NULL) {
+                JSON::PrintInformation(jsm);
+                jsm = jsm->next;
+            }
+            JSON::JSON_MAP* jsm0 = JSON::JsonMap;
+            JSON::OutputJson(jsm0);
+            JSON::PrintTokens(jsonTokens);
 
             // Non-whitespace JSON char* is no longer needed.
             free(jsonTrim);
