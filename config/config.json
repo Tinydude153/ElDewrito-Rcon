@@ -1,5 +1,5 @@
 {
-    "password" : "password",
+    "password" : "password123",
     "address" : "127.0.0.1",
     "rcon_port" : "11776",
     "output_binary_dump" : true,

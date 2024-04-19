@@ -1,5 +1,6 @@
 #include <RconCLI/cmd.h>
 
+// Static variables.
 char* Command::Buffer;
 std::atomic<bool> Command::Active = true;
 

@@ -48,19 +48,26 @@ bool Rcon::ReadConfig() {
     char* jsonPassword = json->GetValue("password");
     char* jsonAddress = json->GetValue("address");
     char* jsonRconPort = json->GetValue("rcon_port");
+    char* jsonLogging = json->GetValue("logging");
     int jsonBinDump = json->GetBoolValue("output_binary_dump");
 
     if (!jsonPassword) {
         Rcon::Fail = true;
+        std::cerr << "[CONFIG] Password failed.\n";
         return false;   
     }
     if (!jsonAddress) {
         Rcon::Fail = true;
+        std::cerr << "[CONFIG] IP address failed.\n";
         return false;  
     }
     if (!jsonRconPort) {
         Rcon::Fail = true;
+        std::cerr << "[CONFIG] Port failed.\n";
         return false;  
+    }
+    if (!strncmp(jsonLogging, "robust", 7)) {
+        Rcon::RobustLog = true;
     }
     if (jsonBinDump == 1) {
         Rcon::BinDump = true;
@@ -129,6 +136,9 @@ void Rcon::RconLoop() {
     if (!Rcon::FailWebsocket) {
         if (Rcon::BinDump) {
             Rcon::Websock->DumpBinary = true;
+        }
+        if (Rcon::RobustLog) {
+            Rcon::Websock->Log_Robust = true;
         }
     }
     

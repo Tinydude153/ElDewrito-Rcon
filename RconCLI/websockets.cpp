@@ -160,8 +160,10 @@ bool Websocket::checkFrame(char* frame) {
 
     } else { return false; }
 
-    std::cerr << Websocket::frameoutput.rdbuf();
-    Websocket::frameoutput.flush();
+    if (this->Log_Robust) {
+        std::cerr << Websocket::frameoutput.rdbuf();
+        Websocket::frameoutput.flush();
+    }
     return true;
 
 }
@@ -414,8 +416,10 @@ char* Websocket::compose_frame(Websocket::opcode_type type, char* input) {
 
     free(enc_payload);
 
-    std::cerr << Websocket::frameoutput.rdbuf();
-    Websocket::frameoutput.flush();
+    if (this->Log_Robust) {
+        std::cerr << Websocket::frameoutput.rdbuf();
+        Websocket::frameoutput.flush();
+    }
     
     // Outputs information on a given websocket frame header.
     //Websocket::InspectPacket(frame);
@@ -573,8 +577,9 @@ char* Websocket::receiveData() {
         }
         if (rec <= 0) {
 
-            Network::Log(Websocket::LogSs, "receiveData(): connection has been gracefully closed.", Network::Protocol::LOG_WEBSOCKET) << '\n';
-            std::cerr << Websocket::LogSs.rdbuf();
+            // Receiving 0 bytes does not always mean that the connection has been closed; leaving this commented out for now.
+            //Network::Log(Websocket::LogSs, "receiveData(): connection has been gracefully closed.", Network::Protocol::LOG_WEBSOCKET) << '\n';
+            //std::cerr << Websocket::LogSs.rdbuf();
 
         } else if (rec == SOCKET_ERROR) {
 
@@ -607,6 +612,7 @@ void Websocket::threadedOutput() {
         output = Websocket::receiveData();
         if (output) {   
             
+            // If DumpBinary is true, dump each server packet to one .bin file.
             if (Websocket::DumpBinary) {
 
                 binfile = std::ofstream("output_binary_dump.bin", std::ofstream::app | std::ofstream::binary);
@@ -628,9 +634,7 @@ void Websocket::threadedOutput() {
                 }
 
             }
-            binfile.write(output, strlen(output) + 1);
             printf("\e7"); // Save cursor position.
-            printf("\n");
             printf("\e[G"); // Move to beginning of line.
             printf("\e[K");  // Clear line beginning from cursor.
             printf("%s\n", output);

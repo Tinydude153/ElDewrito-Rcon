@@ -42,6 +42,7 @@ class Websocket {
     // If true, dumps websocket output to a binary file.
     bool DumpBinary = false;
     // For logging.
+    bool Log_Robust = false;
     std::stringstream LogSs;
     // Stringstream for each frame; this is only logged when there is an invalid frame error.
     std::stringstream frameoutput;

@@ -28,6 +28,7 @@ class Rcon {
     bool BinDump = false;
     bool Fail = false;
     bool FailWebsocket = false;
+    bool RobustLog = false;
     const char* Address;
     const char* Password;
     long int RconPort;

@@ -41,3 +41,4 @@ int main() {
     Dewrito::logstream.lg_write();
     return 0;
 }
+ 
