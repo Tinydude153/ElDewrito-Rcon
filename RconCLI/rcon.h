@@ -1,10 +1,10 @@
 #ifndef RCON_H
 #define RCON_H
 
-#include <RconCLI/json/json.h>
 #include <RconCLI/logging.h>
 #include <RconCLI/websockets.h>
 #include <RconCLI/cmd.h>
+#include <RconCLI/config.h>
 #include <string>
 #include <thread>
 #include <atomic>
@@ -24,14 +24,15 @@ class Rcon {
 
     public:
     Websocket* Websock;
+    Config* Cfg;
     Command::key_callback GetCallback();
     bool BinDump = false;
     bool Fail = false;
     bool FailWebsocket = false;
     bool RobustLog = false;
-    const char* Address;
-    const char* Password;
-    long int RconPort;
+    std::string Address;
+    std::string Password;
+    std::string RconPort;
     bool ReadConfig();
     bool CreateWebsocket();
     void RconLoop();

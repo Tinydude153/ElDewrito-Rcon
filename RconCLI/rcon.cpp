@@ -36,57 +36,41 @@ Rcon::Rcon() {
 
 bool Rcon::ReadConfig() {
 
-    JSON* json;
-    try {
-
-        json = new JSON("config/config.json", true);
-
-    } catch (const std::exception& e) {
-        std::cerr << '[' <<__FUNCTION__ << "] " << e.what() << '\n';
-        return false;
-    }
-    char* jsonPassword = json->GetValue("password");
-    char* jsonAddress = json->GetValue("address");
-    char* jsonRconPort = json->GetValue("rcon_port");
-    char* jsonLogging = json->GetValue("logging");
-    int jsonBinDump = json->GetBoolValue("output_binary_dump");
-
-    if (!jsonPassword) {
+    Rcon::Cfg = new Config("config/config.cfg");
+    Rcon::Password = Rcon::Cfg->GetValue("password");
+    Rcon::Address = Rcon::Cfg->GetValue("address");
+    Rcon::RconPort = Rcon::Cfg->GetValue("rcon_port");
+    if (Rcon::Password.empty()) {
         Rcon::Fail = true;
         std::cerr << "[CONFIG] Password failed.\n";
         return false;   
     }
-    if (!jsonAddress) {
+    if (Rcon::Address.empty()) {
         Rcon::Fail = true;
         std::cerr << "[CONFIG] IP address failed.\n";
         return false;  
     }
-    if (!jsonRconPort) {
+    if (Rcon::RconPort.empty()) {
         Rcon::Fail = true;
         std::cerr << "[CONFIG] Port failed.\n";
         return false;  
     }
-    if (!strncmp(jsonLogging, "robust", 7)) {
-        Rcon::RobustLog = true;
-    }
-    if (jsonBinDump == 1) {
+
+    std::string bindump = Rcon::Cfg->GetValue("binary_dump");
+    if (bindump.compare("true") == 0) {
         Rcon::BinDump = true;
     }
 
-    Rcon::Password = (const char*)jsonPassword;
-    Rcon::Address = (const char*)jsonAddress;
-    Rcon::RconPort = strtol((const char*)jsonRconPort, NULL, 10);
-
-    delete json;
     return true;
+
 }
 
 bool Rcon::CreateWebsocket() {
 
     try {
 
-        Rcon::Websock = new Websocket(Rcon::Address, (int)Rcon::RconPort, "dew-rcon");
-        Rcon::Websock->sendData(Rcon::Websock->opcode_type::TEXT, (char*)Rcon::Password);
+        Rcon::Websock = new Websocket(Rcon::Address.c_str(), (int)(strtol(Rcon::RconPort.c_str(), NULL, 10)), "dew-rcon");
+        Rcon::Websock->sendData(Rcon::Websock->opcode_type::TEXT, (char*)Rcon::Password.c_str());
         char* wsRec = Rcon::Websock->receiveData();
         char* wsPay = Rcon::Websock->parse_payload(wsRec);
         if (strncmp((const char*)wsPay, "accept", strlen("accept"))) {
@@ -195,6 +179,7 @@ void Rcon::RconLoop() {
     */
     //Cmd.~Command();
 
+    delete Rcon::Cfg;
     if (!Rcon::FailWebsocket) {
         closesocket(Rcon::Websock->GetSocket());
         delete Rcon::Websock;

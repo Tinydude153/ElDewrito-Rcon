@@ -30,7 +30,7 @@ int main() {
 
     } else {
 
-        Dewrito::logstream.lg_log(Dewrito::logstream.LG_ERROR) << "Config failure: check config.json.\n";
+        Dewrito::logstream.lg_log(Dewrito::logstream.LG_ERROR) << "Config failure: check config.cfg.\n";
         Dewrito::logstream.lg_log(Dewrito::logstream.LG_ERROR) << "RconCLI exiting.\n";
         Dewrito::logstream.lg_write();
         return 1;
@@ -41,4 +41,3 @@ int main() {
     Dewrito::logstream.lg_write();
     return 0;
 }
- 
