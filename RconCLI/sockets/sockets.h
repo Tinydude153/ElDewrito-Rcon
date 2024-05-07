@@ -14,6 +14,18 @@
 
 #pragma comment(lib, "ws2_32.lib")
 
+#if _WIN32 
+    typedef SOCKET socketfd_t;
+    #define SOCKET_ERROR_NO (WSAGetLastError())
+    #define EWOULDBLOCK (WSAEWOULDBLOCK)
+#else 
+    #include <sys/time.h>
+    #include <sys/socket.h>
+    typedef int socketfd_t;
+    #define SOCKET_ERROR_NO (errno)
+    #define WSAEWOULDBLOCK (EWOULDBLOCK)
+#endif
+
 class Sockets {
 private:
     char* host;
@@ -21,7 +33,7 @@ private:
     sockaddr_in hint;
 
     // Internal socket object.
-    SOCKET m_socket;
+    socketfd_t m_socket;
 
     // For dealing with HTTP responses.
     std::map<std::string, std::string> ParseHttpHeaders(char* data);
@@ -30,21 +42,22 @@ private:
     // Socket connection.
     int ConnectSocket();
     int RetryConnection();
+    const char* GetErrorMsg();
 
 public:
 
     // Returns a reference to the internal socket.
-    SOCKET& GetInternalSocket();
+    socketfd_t& GetInternalSocket();
     // Sends data on a connected socket.
     int Send(const char* buffer);
     // Receives all pending data on a socket; non-blocking by default.
     char* Receive(size_t buf_size);
     // Poll() is just a mask for the select() function.
-    int Poll(SOCKET socket, long seconds, long micro_seconds);
+    int Poll(socketfd_t socket, long seconds, long micro_seconds);
     // Sets a socket to non-blocking mode.
-    void SetNonBlocking(SOCKET socket);
+    void SetNonBlocking(socketfd_t socket);
     // Sets a socket to blocking mode.
-    void SetBlocking(SOCKET socket);
+    void SetBlocking(socketfd_t socket);
     // Sets a socket within a Sockets object to non-blocking mode.
     void SetNonBlocking();
     // Sets a socket within a Sockets object to blocking mode.

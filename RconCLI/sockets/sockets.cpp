@@ -7,6 +7,21 @@
 // created by the websocket class.
 //
 
+const char* GetErrorMsg() {
+
+#if _WIN32  
+    static char msg[256] = {0};
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        0, WSAGetLastError(), 0, msg, 256, 0);
+    char* nl = strrchr(msg, '\n');
+    if (nl) *nl = 0;
+    return msg;
+#else 
+    return strerror(errno);
+#endif
+
+}
+
 std::map<std::string, std::string> Sockets::ParseHttpHeaders(char* data) {
 
     std::map<std::string, std::string> header_fields;
@@ -95,7 +110,7 @@ std::string Sockets::GetHttpHeaderValue(std::string key, std::map<std::string, s
 }
 
 // Sets a specified socket to non-blocking mode.
-void Sockets::SetNonBlocking(SOCKET socket) {
+void Sockets::SetNonBlocking(socketfd_t socket) {
 
     // 0 for blocking, 1 for non-blocking.
     unsigned long mode = 1;
@@ -122,7 +137,7 @@ void Sockets::SetNonBlocking() {
 }
 
 // Sets a specified socket to blocking mode.
-void Sockets::SetBlocking(SOCKET socket) {
+void Sockets::SetBlocking(socketfd_t socket) {
 
     // 0 for blocking, 1 for non-blocking.
     unsigned long mode = 0;
@@ -148,9 +163,13 @@ void Sockets::SetBlocking() {
     return;
 }
 
-int Sockets::Poll(SOCKET socket, long seconds, long micro_seconds) {
+int Sockets::Poll(socketfd_t socket, long seconds, long micro_seconds) {
 
-    TIMEVAL timev;
+    #if _WIN32 
+        TIMEVAL timev;
+    #else 
+        timeval timev;
+    #endif
     fd_set fds;
 
     timev.tv_sec = seconds;
@@ -159,8 +178,8 @@ int Sockets::Poll(SOCKET socket, long seconds, long micro_seconds) {
     FD_ZERO(&fds);
     FD_SET(socket, &fds);
     int sel = select(0, &fds, NULL, NULL, &timev);
-    if (sel == SOCKET_ERROR) {
-        LogSocketError("Winsock Select() failed: ", WSAGetLastError());
+    if (sel == -1) {
+        LogSocket(std::cerr, SOCKET_ERROR_NO, " : ", GetErrorMsg());
     }
 
     return sel;
@@ -209,42 +228,22 @@ int Sockets::HttpContentLength(int bytes_received, char* curr_buf) {
 }
 
 // Connects a socket with data that is defined and initialized by the constructor.
-// Returns 1 on successful connection, and 0 on SOCKET_ERROR.
+// Returns 0 on successful connection, and -1 on SOCKET_ERROR(-1).
 int Sockets::ConnectSocket() {
 
     int gla;
     int connection;
     connection = connect(m_socket, (sockaddr*)&hint, sizeof(hint));
-    if (connection != SOCKET_ERROR) {
+    if (connection != -1) {
 
         //printf("\nConnection successful\nHost: %s:%d", host, port);
         LogSocket(std::cerr, "[SOCKET] ", "Connection ", host, ':', port, " success.", '\n');
         return connection;
 
     }
-    if (connection == SOCKET_ERROR) {
-        
-        gla = WSAGetLastError();
-        switch (gla) {
+    if (connection == -1) {
 
-            case WSAEADDRNOTAVAIL:
-                LogSocketError("The remote address is not a valid address.", gla);
-                return gla;
-            case WSAECONNREFUSED:
-                LogSocketError("The attempt to connect was forcefully rejected.", gla);
-                return gla;
-            case WSAEISCONN:
-                LogSocketError("The socket is already connected.", gla);
-                return gla;
-            case WSAETIMEDOUT:
-                LogSocketError("The connection attempt timed out without establishing a connection.", gla);
-                return gla;
-            default: 
-                LogSocketError("The connection attempt failed.", gla);
-                WSACleanup();
-                return gla;
-
-        }
+        LogSocket(std::cerr, SOCKET_ERROR_NO, " : ", GetErrorMsg());
 
     }
 
@@ -252,31 +251,24 @@ int Sockets::ConnectSocket() {
 }
 
 // Sends on the socket defined and initialized by the constructor. Returns bytes 
-// sent on success and Winsock error code upon failure (SOCKET_ERROR).
+// sent on success and Winsock error code upon failure (SOCKET_ERROR(-1)).
 int Sockets::Send(const char* buffer) {
 
-    int gla;
     int sent = send(m_socket, buffer, strlen(buffer), 0);
 
-    if (sent != SOCKET_ERROR) {
+    if (sent != -1) {
         return sent;
     }
-    if (sent == SOCKET_ERROR) {
+    if (sent == -1) {
 
-        gla = WSAGetLastError();
-        if (gla == WSAETIMEDOUT) {
-            LogSocketError("The connection has been dropped.", gla);
-            throw std::runtime_error("Socket exception: connection has been dropped.");
-            return gla;
-        } else if (gla == WSAENOTCONN) {
-            LogSocketError("The socket is not connected.", gla);
-            throw std::runtime_error("Socket exception: not connected.");
-            return gla;
-        }
-        LogSocketError("Winsock Send() failed: ", gla);
-        throw std::runtime_error("Socket exception: Send() failed.");
-        closesocket(m_socket);
-        return gla;
+        LogSocket(std::cerr, SOCKET_ERROR_NO, " : ", GetErrorMsg());
+
+        #if _WIN32
+            closesocket(m_socket);
+        #else 
+            close(m_socket);
+        #endif
+        return -1;
 
     }
 
@@ -320,19 +312,16 @@ char* Sockets::Receive(size_t buf_size) {
             // Socket timed out.
             return NULL;
 
-        } else if (sel == SOCKET_ERROR) {
+        } else if (sel == -1) {
 
-            gla = WSAGetLastError();
-            if (gla == WSAEWOULDBLOCK) {
+            if (SOCKET_ERROR_NO == EWOULDBLOCK) {
 
                 // No data to be read; return.
-                seq_f = true;
-                printf("\nRECEIVED_RETURNED: %s\n", rec_buf);
                 return rec_buf;
 
             } else {
                 
-                LogSocketError("Winsock Send() failed: ", WSAGetLastError());
+                LogSocket(std::cerr, SOCKET_ERROR_NO, " : ", GetErrorMsg());
                 return NULL;
 
             }
@@ -357,13 +346,13 @@ SOCKET& Sockets::GetInternalSocket() {
 // Tries to connect a socket five times, if failed.
 int Sockets::RetryConnection() {
 
-    int conn;
+    int conn = -1;
     for (int i = 0; i < 1; i++) {
         conn = Sockets::ConnectSocket();
-        if (!conn) return 0;
+        if (conn == 0) return 0;
     }
+    return -1;
 
-    return 1;
 }
 
 // Constructor for the socketInit class. This constructor creates a socket
@@ -381,7 +370,7 @@ Sockets::Sockets(char* m_host, int m_port, char* data) {
         LogSocketError("WSAStartup failed: ", initWS);
     }
 
-    SOCKET m_socket = socket(AF_INET, SOCK_STREAM, 0);
+    socketfd_t m_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (m_socket == INVALID_SOCKET) {
         LogSocketError("Failed to create socket: ", WSAGetLastError());
         WSACleanup();
@@ -409,18 +398,22 @@ Sockets::Sockets(char* m_host, int m_port) {
     host = m_host;
     port = m_port;
 
+    #if _WIN32
     // Initialize Winsock.
     WSADATA wsaData;
     int initWS;
     initWS = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (initWS != 0) {
-        printf("\nWSAStartup failed: %d\n", initWS);
+        std::cerr << "WSAStartup failed: " << initWS << "\n";
     }
+    #endif
 
-    SOCKET t_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (t_socket == INVALID_SOCKET) {
-        printf("\nFailed to create socket: %d", WSAGetLastError());
-        WSACleanup();
+    socketfd_t t_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (t_socket == -1) {
+        std::cerr << SOCKET_ERROR_NO << " : " << GetErrorMsg();
+        #if _WIN32 
+            WSACleanup();
+        #endif
     }
 
     // sockaddr_in structure definitions
@@ -436,13 +429,15 @@ Sockets::Sockets(char* m_host, int m_port) {
         printf("\nSocket: connected\n");
     } else {
         retry_conn = RetryConnection();
-        if (!retry_conn) {
+        if (retry_conn == 0) {
             printf("\nSocket: connected\n");
         } else {
 
             std::cerr << '[' <<__FUNCTION__ << "] " << "Socket exception thrown: cannot connect to address." << '\n';
             throw std::runtime_error("Socket exception thrown: cannot connect to address.");
-            WSACleanup();
+            #if _WIN32
+                WSACleanup();
+            #endif
 
         }
     }
