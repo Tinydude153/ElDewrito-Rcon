@@ -1,7 +1,12 @@
 #ifndef CONSOLE_UTIL_H
 #define CONSOLE_UTIL_H
 
-#include <windows.h>
+#if _WIN32 
+    #include <windows.h>
+#else 
+    #include <sys/ioctl.h>
+    #include <unistd.h>
+#endif
 
 namespace WindowsConsole {
 
