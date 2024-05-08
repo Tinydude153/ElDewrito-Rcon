@@ -7,7 +7,7 @@
 // created by the websocket class.
 //
 
-const char* GetErrorMsg() {
+const char* Sockets::GetErrorMsg() {
 
 #if _WIN32  
     static char msg[256] = {0};
@@ -114,9 +114,13 @@ void Sockets::SetNonBlocking(socketfd_t socket) {
 
     // 0 for blocking, 1 for non-blocking.
     unsigned long mode = 1;
-    int ioct_res = ioctlsocket(socket, FIONBIO, &mode);
-    if (ioct_res == SOCKET_ERROR) {
-        LogSocketError("Winsock ioctlsocket() failed: ", WSAGetLastError());
+    #if _WIN32 
+        int ioct_res = ioctlsocket(socket, FIONBIO, &mode);
+    #else 
+        int ioct_res = ioctl(socket, FIONBIO, &mode);
+    #endif
+    if (ioct_res == -1) {
+        LogSocket(std::cerr, SOCKET_ERROR_NO, " : ", GetErrorMsg());
     }
 
     return;
@@ -127,10 +131,13 @@ void Sockets::SetNonBlocking() {
 
     // 0 for blocking, 1 for non-blocking.
     unsigned long mode = 1;
-    int ioct_res = ioctlsocket(this->m_socket, FIONBIO, &mode);
-    if (ioct_res == SOCKET_ERROR) {
-        LogSocketError("Winsock ioctlsocket() failed: ", WSAGetLastError());
-        std::cout << std::cerr.rdbuf();
+    #if _WIN32 
+        int ioct_res = ioctlsocket(this->m_socket, FIONBIO, &mode);
+    #else 
+        int ioct_res = ioctl(this->m_socket, FIONBIO, &mode);
+    #endif
+    if (ioct_res == -1) {
+        LogSocket(std::cerr, SOCKET_ERROR_NO, " : ", GetErrorMsg());
     }
 
     return;
@@ -141,10 +148,13 @@ void Sockets::SetBlocking(socketfd_t socket) {
 
     // 0 for blocking, 1 for non-blocking.
     unsigned long mode = 0;
-    int ioct_res = ioctlsocket(socket, FIONBIO, &mode);
-    if (ioct_res == SOCKET_ERROR) {
-        LogSocketError("Winsock ioctlsocket() failed: ", WSAGetLastError());
-        std::cout << std::cerr.rdbuf();
+    #if _WIN32 
+        int ioct_res = ioctlsocket(socket, FIONBIO, &mode);
+    #else 
+        int ioct_res = ioctl(socket, FIONBIO, &mode);
+    #endif
+    if (ioct_res == -1) {
+        LogSocket(std::cerr, SOCKET_ERROR_NO, " : ", GetErrorMsg());
     }
 
     return;
@@ -154,10 +164,13 @@ void Sockets::SetBlocking() {
 
     // 0 for blocking, 1 for non-blocking.
     unsigned long mode = 0;
-    int ioct_res = ioctlsocket(this->m_socket, FIONBIO, &mode);
-    if (ioct_res == SOCKET_ERROR) {
-        LogSocketError("Winsock ioctlsocket() failed: ", WSAGetLastError());
-        std::cout << std::cerr.rdbuf();
+    #if _WIN32 
+        int ioct_res = ioctlsocket(this->m_socket, FIONBIO, &mode);
+    #else 
+        int ioct_res = ioctl(this->m_socket, FIONBIO, &mode);
+    #endif
+    if (ioct_res == -1) {
+        LogSocket(std::cerr, SOCKET_ERROR_NO, " : ", GetErrorMsg());
     }
 
     return;
@@ -214,9 +227,6 @@ int Sockets::HttpContentLength(int bytes_received, char* curr_buf) {
                 return 0;
                 
             }
-            std::cout << "\nCONTENT_LENGTH: " << content_length << "\n";
-            printf("\nSIZE_OF_BUF: %d\n", strlen(curr_buf));
-            std::cout << "\nHEADER_FROM_REC: \n" << curr_buf;
             return content_length;
 
         }
@@ -231,13 +241,11 @@ int Sockets::HttpContentLength(int bytes_received, char* curr_buf) {
 // Returns 0 on successful connection, and -1 on SOCKET_ERROR(-1).
 int Sockets::ConnectSocket() {
 
-    int gla;
     int connection;
     connection = connect(m_socket, (sockaddr*)&hint, sizeof(hint));
-    if (connection != -1) {
+    if (connection == 0) {
 
-        //printf("\nConnection successful\nHost: %s:%d", host, port);
-        LogSocket(std::cerr, "[SOCKET] ", "Connection ", host, ':', port, " success.", '\n');
+        LogSocket(std::cerr, "[SOCKET] ", "Connection ", host, ':', port, " success.\n");
         return connection;
 
     }
@@ -255,7 +263,6 @@ int Sockets::ConnectSocket() {
 int Sockets::Send(const char* buffer) {
 
     int sent = send(m_socket, buffer, strlen(buffer), 0);
-
     if (sent != -1) {
         return sent;
     }
@@ -314,7 +321,7 @@ char* Sockets::Receive(size_t buf_size) {
 
         } else if (sel == -1) {
 
-            if (SOCKET_ERROR_NO == EWOULDBLOCK) {
+            if (SOCKET_ERROR_NO == S_EWOULDBLOCK) {
 
                 // No data to be read; return.
                 return rec_buf;
@@ -363,17 +370,22 @@ Sockets::Sockets(char* m_host, int m_port, char* data) {
     port = m_port;
 
     // Initialize Winsock.
+    #if _WIN32
+    // Initialize Winsock.
     WSADATA wsaData;
     int initWS;
     initWS = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (initWS != 0) {
-        LogSocketError("WSAStartup failed: ", initWS);
+        std::cerr << "WSAStartup failed: " << initWS << "\n";
     }
+    #endif
 
     socketfd_t m_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (m_socket == INVALID_SOCKET) {
-        LogSocketError("Failed to create socket: ", WSAGetLastError());
-        WSACleanup();
+    if (m_socket == -1) {
+        LogSocket(std::cerr, SOCKET_ERROR_NO, " : ", GetErrorMsg());
+        #if _WIN32 
+            WSACleanup();
+        #endif
     }
 
     // sockaddr_in structure definitions
@@ -384,7 +396,7 @@ Sockets::Sockets(char* m_host, int m_port, char* data) {
     m_socket = m_socket;
 
     int socket_connection = ConnectSocket();
-    if (socket_connection == 1) {
+    if (socket_connection == 0) {
         LogSocketError("Socket connected.");
         int sendBuf = Send(data);
     } else {
@@ -410,7 +422,7 @@ Sockets::Sockets(char* m_host, int m_port) {
 
     socketfd_t t_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (t_socket == -1) {
-        std::cerr << SOCKET_ERROR_NO << " : " << GetErrorMsg();
+        LogSocket(std::cerr, SOCKET_ERROR_NO, " : ", GetErrorMsg());
         #if _WIN32 
             WSACleanup();
         #endif
@@ -426,27 +438,28 @@ Sockets::Sockets(char* m_host, int m_port) {
     int retry_conn;
     int socket_connection = ConnectSocket();
     if (socket_connection == 0) {
-        printf("\nSocket: connected\n");
+        
+        LogSocket(std::cerr, "[SOCKET] Connected.\n");
+
     } else {
-        retry_conn = RetryConnection();
-        if (retry_conn == 0) {
-            printf("\nSocket: connected\n");
-        } else {
 
-            std::cerr << '[' <<__FUNCTION__ << "] " << "Socket exception thrown: cannot connect to address." << '\n';
-            throw std::runtime_error("Socket exception thrown: cannot connect to address.");
-            #if _WIN32
-                WSACleanup();
-            #endif
+        std::cerr << '[' <<__FUNCTION__ << "] " << "Socket exception thrown: cannot connect to address." << '\n';
+        throw std::runtime_error("Socket exception thrown: cannot connect to address.");
+        #if _WIN32
+            WSACleanup();
+        #endif
 
-        }
     }
 }
 
 Sockets::~Sockets() {
 
     shutdown(Sockets::m_socket, 2);
-    closesocket(Sockets::m_socket);
-    WSACleanup();
+    #if _WIN32
+        closesocket(m_socket);
+        WSACleanup();
+    #else 
+        close(m_socket);
+    #endif
 
 }

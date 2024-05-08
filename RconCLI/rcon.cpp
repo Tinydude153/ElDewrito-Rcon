@@ -22,12 +22,16 @@ Rcon::Rcon() {
 
             Rcon::Fail = false;
             Rcon::FailWebsocket = false;
-            SetConsoleTitle("RconCLI - Connected");
+            if (Rcon::RconMode == Rcon::Mode::RCON) {
+                SetConsoleTitle("RconCLI - Connected : Mode - RCON");
+            } else { SetConsoleTitle("RconCLI - Connected : Mode - SYSTEM"); }
 
         } else { 
             // Rcon::Fail is not set because the program should continue running, just in a disconnected state.
             Rcon::FailWebsocket = true; 
-            SetConsoleTitle("RconCLI - Disconnected");
+            if (Rcon::RconMode == Rcon::Mode::RCON) {
+                SetConsoleTitle("RconCLI - Disconnected : Mode - RCON");
+            } else { SetConsoleTitle("RconCLI - Disconnected : Mode - SYSTEM"); }
         } 
 
     } else { Rcon::Fail = true; }
@@ -97,17 +101,47 @@ void Rcon::keycb_f5(Command& cmd) {
     if (GetRcon::GetRconInstance()->FailWebsocket) {
 
         if (GetRcon::GetRconInstance()->CreateWebsocket()) {
-
-            SetConsoleTitle("RconCLI - Connected");
+            
+            if (GetRcon::GetRconInstance()->RconMode == Rcon::Mode::RCON) {
+                SetConsoleTitle("RconCLI - Connected : Mode - RCON");
+            } else { SetConsoleTitle("RconCLI - Connected : Mode - SYSTEM"); }
             GetRcon::GetRconInstance()->Fail = false;
             GetRcon::GetRconInstance()->FailWebsocket = false;
 
         } else { 
-            SetConsoleTitle("RconCLI - Disconnected");
+            if (GetRcon::GetRconInstance()->RconMode == Rcon::Mode::RCON) {
+                SetConsoleTitle("RconCLI - Disconnected : Mode - RCON");
+            } else { SetConsoleTitle("RconCLI - Disconnected : Mode - SYSTEM"); }
             GetRcon::GetRconInstance()->FailWebsocket = true; 
         }
 
-    } else { SetConsoleTitle("RconCLI - Connected"); }
+    } else { 
+
+        if (GetRcon::GetRconInstance()->RconMode == Rcon::Mode::RCON) {
+            SetConsoleTitle("RconCLI - Connected : Mode - RCON");
+        } else { SetConsoleTitle("RconCLI - Connected : Mode - SYSTEM"); }
+
+    }
+
+}
+
+void Rcon::keycb_f4(Command& cmd) {
+
+    if (GetRcon::GetRconInstance()->RconMode == Rcon::Mode::RCON) {
+        GetRcon::GetRconInstance()->RconMode = Rcon::Mode::SYSTEM;
+        if (GetRcon::GetRconInstance()->FailWebsocket) {
+            SetConsoleTitle("RconCLI - Disconnected : Mode - SYSTEM");
+        } else {
+            SetConsoleTitle("RconCLI - Connected : Mode - SYSTEM");
+        }
+    } else if (GetRcon::GetRconInstance()->RconMode == Rcon::Mode::SYSTEM) {
+        GetRcon::GetRconInstance()->RconMode = Rcon::Mode::RCON;
+        if (GetRcon::GetRconInstance()->FailWebsocket) {
+            SetConsoleTitle("RconCLI - Disconnected : Mode - RCON");
+        } else {
+            SetConsoleTitle("RconCLI - Connected : Mode - RCON");
+        }
+    }
 
 }
 
@@ -131,8 +165,10 @@ void Rcon::RconLoop() {
 
     // My function pointer implementation for callbacks is disgusting but this at least works so I'm done for now lol
     GetRcon::rconref = this;
-    Command::key_callback funcptr = &Rcon::keycb_f5;
-    Cmd.CustomKey(Rcon::Keycode::F5, funcptr);
+    Command::key_callback funcptr_f5 = &Rcon::keycb_f5;
+    Command::key_callback funcptr_f4 = &Rcon::keycb_f4;
+    Cmd.CustomKey(Rcon::Keycode::F5, funcptr_f5);
+    Cmd.CustomKey(Rcon::Keycode::F4, funcptr_f4);
     if (!Rcon::FailWebsocket) {
         Rcon::Websock->GetCommandBuffer(&Cmd);
     }

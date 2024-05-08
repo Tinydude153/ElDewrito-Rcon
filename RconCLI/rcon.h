@@ -17,10 +17,19 @@ class Rcon {
     private:
     enum Keycode {
 
-        F5 = 0x3F // connection refresh.
+        F5 = 0x3F, // Connection refresh.
+        F4 = 0x3E // Change mode.
 
     };
     static void keycb_f5(Command& cmd);
+
+    enum Mode {
+
+        RCON,
+        SYSTEM
+
+    };
+    static void keycb_f4(Command& cmd); // Switched input mode between the two modes.
 
     public:
     Websocket* Websock;
@@ -30,6 +39,7 @@ class Rcon {
     bool Fail = false;
     bool FailWebsocket = false;
     bool RobustLog = false;
+    Mode RconMode = Mode::RCON;
     std::string Address;
     std::string Password;
     std::string RconPort;

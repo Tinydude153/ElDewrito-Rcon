@@ -8,22 +8,23 @@
 #include <map>
 #include <string>
 #include <iostream>
-#include <Winsock2.h>
-#include <WS2tcpip.h>
 #include <stdio.h>
 
-#pragma comment(lib, "ws2_32.lib")
-
-#if _WIN32 
+#if _WIN32  
+    #include <Winsock2.h>
+    #include <WS2tcpip.h>
+    #pragma comment(lib, "ws2_32.lib")
     typedef SOCKET socketfd_t;
     #define SOCKET_ERROR_NO (WSAGetLastError())
-    #define EWOULDBLOCK (WSAEWOULDBLOCK)
+    #define S_EWOULDBLOCK (WSAEWOULDBLOCK)
 #else 
     #include <sys/time.h>
     #include <sys/socket.h>
+    #include <sys/ioctl.h>
+    #include <arpa/inet.h>
     typedef int socketfd_t;
     #define SOCKET_ERROR_NO (errno)
-    #define WSAEWOULDBLOCK (EWOULDBLOCK)
+    #define S_EWOULDBLOCK (EWOULDBLOCK)
 #endif
 
 class Sockets {

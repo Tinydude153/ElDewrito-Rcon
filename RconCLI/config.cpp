@@ -68,6 +68,25 @@ std::string Config::GetValue(std::string key) {
 
 }
 
+void Config::SetValue(std::string key, std::string value) {
+
+    for (std::map<std::string, std::string>::iterator it = this->m_Map.begin(); it != this->m_Map.end(); it++) {
+
+        if (it->first.compare(key) == 0) {
+
+            if (!it->second.empty()) {
+
+                it->second = value;
+                return;
+
+            }
+
+        }
+
+    }
+
+}
+
 Config::Config(const char* path) {
 
     Config::Parse(path);

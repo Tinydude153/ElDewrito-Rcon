@@ -292,7 +292,7 @@ void Command::Update() {
     printf("\e[%dd", 0);
     //printf("\e[K");
     printf("\e[G");
-    printf(Command::ipchar);
+    printf(0);
     printf("\e8"); // Restore cursor position.
     printf("\e[?25h");
 

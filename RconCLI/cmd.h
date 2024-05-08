@@ -30,7 +30,6 @@ class Command {
     } KEY_VALUE;
 
     Cache* CmdCache;
-    const char* ipchar = "127.0.1.1:77777";
     // Windows console API functions.
     WindowsConsole::Console MainConsole;
 

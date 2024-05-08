@@ -14,6 +14,7 @@ class Config {
     void Parse(const char* path);
     void ReadCfg();
     std::string GetValue(std::string key);
+    void SetValue(std::string key, std::string value);
     Config();
     Config(const char* path);
 
