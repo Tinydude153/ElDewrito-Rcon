@@ -22,6 +22,7 @@
     #include <sys/socket.h>
     #include <sys/ioctl.h>
     #include <arpa/inet.h>
+    #include <sys/select.h>
     typedef int socketfd_t;
     #define SOCKET_ERROR_NO (errno)
     #define S_EWOULDBLOCK (EWOULDBLOCK)
