@@ -26,7 +26,15 @@ int main() {
     if (!rcon.Fail) {
 
         // Begin main loop.
-        rcon.RconLoop();
+        if (!rcon.AnnounceServiceOnly) {
+
+            rcon.RconLoop();
+        
+        } else {
+
+            rcon.RconAnnounceLoop();
+
+        }
 
     } else {
 

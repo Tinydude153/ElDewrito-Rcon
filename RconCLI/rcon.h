@@ -5,6 +5,9 @@
 #include <RconCLI/websockets.h>
 #include <RconCLI/cmd.h>
 #include <RconCLI/config.h>
+#include <RconCLI/sos/sos.h>
+#include <chrono>
+#include <ratio>
 #include <string>
 #include <thread>
 #include <atomic>
@@ -43,8 +46,10 @@ class Rcon {
     std::string Address;
     std::string Password;
     std::string RconPort;
+    bool AnnounceServiceOnly = false;
     bool ReadConfig();
     bool CreateWebsocket();
+    void RconAnnounceLoop();
     void RconLoop();
     Rcon();
 

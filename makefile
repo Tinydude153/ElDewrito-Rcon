@@ -3,7 +3,7 @@ TARGET = RconCLI
 
 # Directories.
 IDIR = "C:\Program Files\OpenSSL-Win64\include"
-SUBDIR = http json sockets
+SUBDIR = http json sockets sos
 BUILD_DIR = build
 SUB_BUILD_DIR = $(addprefix $(BUILD_DIR)\, $(SUBDIR))
 
@@ -32,8 +32,8 @@ CXXFLAGS = -I$(IDIR) -I$(MPWD) -g
 LDFLAGS = -lws2_32 -lcrypto -static-libgcc -static-libstdc++ 
 
 # Source files.
-SOURCE = $(wildcard RconCLI/*.cpp) $(wildcard RconCLI/http/*.cpp) $(wildcard RconCLI/json/*.cpp) $(wildcard RconCLI/sockets/*.cpp)
-INCLUDE = $(wildcard RconCLI/*.h) $(wildcard RconCLI/http/*.h) $(wildcard RconCLI/json/*.h) $(wildcard RconCLI/sockets/*.h)
+SOURCE = $(wildcard RconCLI/*.cpp) $(wildcard RconCLI/http/*.cpp) $(wildcard RconCLI/json/*.cpp) $(wildcard RconCLI/sockets/*.cpp) $(wildcard RconCLI/sos/*.cpp)
+INCLUDE = $(wildcard RconCLI/*.h) $(wildcard RconCLI/http/*.h) $(wildcard RconCLI/json/*.h) $(wildcard RconCLI/sockets/*.h) $(wildcard RconCLI/sos/*.h)
 
 # Object files to be built.
 _OBJ = $(SOURCE:%.cpp=%.o)

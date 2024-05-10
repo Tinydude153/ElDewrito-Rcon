@@ -60,6 +60,11 @@ bool Rcon::ReadConfig() {
         return false;  
     }
 
+    std::string announceserv = Rcon::Cfg->GetValue("run_as_announce_service_only");
+    if (announceserv.compare("true") == 0) {
+        Rcon::AnnounceServiceOnly = true;
+    }
+
     std::string bindump = Rcon::Cfg->GetValue("binary_dump");
     if (bindump.compare("true") == 0) {
         Rcon::BinDump = true;
@@ -222,6 +227,40 @@ void Rcon::RconLoop() {
     }
     WSACleanup();
     if (!Rcon::FailWebsocket) receiveThread.join();
+
+}
+
+void Rcon::RconAnnounceLoop() {
+
+    std::thread receiveThread;
+    if (!Rcon::FailWebsocket) receiveThread = std::thread(&Websocket::threadedOutput, &*Rcon::Websock);
+
+    // Binary server output dump in config is true.
+    if (!Rcon::FailWebsocket) {
+        if (Rcon::BinDump) {
+            Rcon::Websock->DumpBinary = true;
+        }
+        if (Rcon::RobustLog) {
+            Rcon::Websock->Log_Robust = true;
+        }
+    }
+
+    Config AnnounceCfg("config/announce.cfg");
+    std::string Msg = AnnounceCfg.GetValue("server_0");
+    char* msg_ws = (char*)Msg.c_str();
+
+    if (!Msg.empty()) {
+
+        while (true) {
+
+            if (!Rcon::FailWebsocket) {
+                Rcon::Websock->sendData(Rcon::Websock->opcode_type::TEXT, (char*)Msg.c_str());
+            }
+            std::this_thread::sleep_for(std::chrono::minutes(5));
+
+        }
+
+    }
 
 }
 
