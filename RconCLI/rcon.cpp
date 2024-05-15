@@ -74,6 +74,14 @@ bool Rcon::ReadConfig() {
 
 }
 
+bool Rcon::ReadSos() {
+
+    Rcon::Sos = new SOSerial;
+    Sos->Deserialize("config/servers.sos");
+    return true;
+
+}
+
 bool Rcon::CreateWebsocket() {
 
     try {
@@ -230,10 +238,61 @@ void Rcon::RconLoop() {
 
 }
 
+void Rcon::RconWebsocketThread(Rcon::annsrv announce_server) {
+
+    try {
+
+        Websocket ws(announce_server.address, announce_server.port, announce_server.protocol);
+        ws.sendData(Websocket::opcode_type::TEXT, announce_server.password);
+        char* wsRec = Rcon::Websock->receiveData();
+        char* wsPay = Rcon::Websock->parse_payload(wsRec);
+        if (strncmp((const char*)wsPay, "accept", strlen("accept"))) {
+            return;
+        }
+
+        while (true) {
+            
+            ws.sendData(Websocket::opcode_type::TEXT, (char*)announce_server.msg.c_str());
+            std::this_thread::sleep_for(std::chrono::minutes(announce_server.interval));
+
+        }
+    } catch (const std::exception& e) {
+
+        std::cerr << '[' <<__FUNCTION__ << "] " << e.what() << '\n';
+        return;
+
+    }
+
+}
+
 void Rcon::RconAnnounceLoop() {
 
     std::thread receiveThread;
     if (!Rcon::FailWebsocket) receiveThread = std::thread(&Websocket::threadedOutput, &*Rcon::Websock);
+
+    Rcon::Sos = new SOSerial;
+    Rcon::Sos->Deserialize("config/servers.sos");
+
+    for (std::map<std::string, std::map<std::string, std::string>>::iterator it = Rcon::Sos->m_SerializationMap.begin(); it != Rcon::Sos->m_SerializationMap.end(); it++) {
+
+        try {
+            std::string rconpass = Rcon::Sos->GetValue(it->first, "Server.RconPassword");
+            std::string rconport = Rcon::Sos->GetValue(it->first, "Server.RconPort");
+            std::string rconaddr = Rcon::Sos->GetValue(it->first, "Server.Address");
+            Rcon::WSConnections.insert(std::pair<std::string, Websocket*>(it->first, new Websocket(rconaddr.c_str(), (int)(strtol(rconport.c_str(), NULL, 10)), "dew-rcon")));
+            Rcon::WSConnections.at(it->first)->sendData(Rcon::Websock->opcode_type::TEXT, (char*)rconpass.c_str());
+            char* wsRec = Rcon::WSConnections.at(it->first)->receiveData();
+            char* wsPay = Rcon::WSConnections.at(it->first)->parse_payload(wsRec);
+            if (strncmp((const char*)wsPay, "accept", strlen("accept"))) {
+                // Remove connection if not accepted.
+                Rcon::WSConnections.erase(it->first);
+            }
+        } catch (const std::exception& e) {
+            std::cerr << '[' << __FUNCTION__ << "] " << e.what() << '\n';
+            std::cerr << "[INFO] " << it->first << " failed to connect.\n";
+        }
+
+    }
 
     // Binary server output dump in config is true.
     if (!Rcon::FailWebsocket) {
@@ -253,9 +312,12 @@ void Rcon::RconAnnounceLoop() {
 
         while (true) {
 
-            if (!Rcon::FailWebsocket) {
-                Rcon::Websock->sendData(Rcon::Websock->opcode_type::TEXT, (char*)Msg.c_str());
+            for (std::map<std::string, Websocket*>::iterator it = Rcon::WSConnections.begin(); it != Rcon::WSConnections.end(); it++) {
+                it->second->sendData(Rcon::Websock->opcode_type::TEXT, (char*)AnnounceCfg.GetValue(it->first).c_str());
             }
+            /*if (!Rcon::FailWebsocket) {
+                Rcon::Websock->sendData(Rcon::Websock->opcode_type::TEXT, (char*)Msg.c_str());
+            }*/
             std::this_thread::sleep_for(std::chrono::minutes(5));
 
         }
@@ -264,4 +326,4 @@ void Rcon::RconAnnounceLoop() {
 
 }
 
-}
+} // End namespace.

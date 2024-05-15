@@ -1,5 +1,0 @@
-server_0 {
-	address = 127.0.0.1,
-	password = 1pass1,
-	rconport = 11776
-}

@@ -11,6 +11,7 @@
 #include <string>
 #include <thread>
 #include <atomic>
+#include <map>
 
 namespace Dewrito {
 
@@ -35,8 +36,18 @@ class Rcon {
     static void keycb_f4(Command& cmd); // Switched input mode between the two modes.
 
     public:
+    struct annsrv {
+        std::string msg;
+        const char* address = 0;
+        int port;
+        std::string protocol;
+        char* password;
+        int interval = 5;
+    };
     Websocket* Websock;
     Config* Cfg;
+    SOSerial* Sos;
+    std::map<std::string, Websocket*> WSConnections; // This is only used if AnnounceServiceOnly is true.
     Command::key_callback GetCallback();
     bool BinDump = false;
     bool Fail = false;
@@ -48,9 +59,11 @@ class Rcon {
     std::string RconPort;
     bool AnnounceServiceOnly = false;
     bool ReadConfig();
+    bool ReadSos();
     bool CreateWebsocket();
     void RconAnnounceLoop();
     void RconLoop();
+    void RconWebsocketThread(annsrv announce_server);
     Rcon();
 
 };

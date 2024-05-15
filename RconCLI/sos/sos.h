@@ -2,6 +2,10 @@
 // Simple Object Serialization:
 // Syntax: object { data=info, data1=info1 }
 // This is just a simple human-readable format for multi-object configurations.
+// Whitespace, newline characters, and tab characters are explicity ignored.
+//
+// This library has absolutely no "bells and whistles" and has nothing fancy at all;
+// it serves a very basic purpose and that is it.
 */
 
 #include <iostream>
