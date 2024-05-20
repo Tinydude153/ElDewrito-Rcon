@@ -1,0 +1,53 @@
+#include <RconCLI/input.h>
+
+std::atomic<bool> Input::LoopEnd = false;
+std::string Input::input_buf;
+
+void sigterm_handler(int sig) {
+
+    Input::LoopEnd = true;
+
+}
+
+#if _WIN32
+BOOL WINAPI WindowsConsoleHandler(DWORD dwType) {
+
+    switch(dwType) {
+        case CTRL_C_EVENT:
+            Input::LoopEnd = true;
+            std::cin.setstate(std::ios_base::eofbit);
+            break;
+        case CTRL_BREAK_EVENT:
+            Input::LoopEnd = true;
+            std::cin.setstate(std::ios_base::eofbit);
+            break;
+        default:
+            break;
+    }
+    return TRUE;
+
+}
+#endif
+
+void Input::InputLoop() {
+
+    #if _WIN32
+        if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)WindowsConsoleHandler,TRUE)) {
+            std::cerr << "[ERROR] Unable to install WindowsConsoleHandler(DWORD).\n";
+        }
+    #else
+        struct sigaction sa;
+        memset(&sa, 0, sizeof(sa));
+        sa.sa_handler = Input::sigterm_handler;
+        sigaction(SIGTERM | SIGINT, &sa, NULL);
+    #endif
+
+    this->SendReady = false;
+    Input::input_buf.clear();
+    std::getline(std::cin, Input::input_buf); // <string>
+    if (Input::input_buf.compare("quit") == 0) {
+        Input::LoopEnd = true;
+    }
+    this->SendReady = true;
+
+}

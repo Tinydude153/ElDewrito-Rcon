@@ -6,13 +6,15 @@
 
 #include <iostream>
 #include <string>
-#include <Windows.h>
 #include <conio.h>
 #include <mutex>
 #include <atomic>
 #include <vector>
 #include <algorithm>
 #include <map>
+#if _WIN32
+    #include <Windows.h>
+#endif
 
 class Command {
     private:
@@ -38,8 +40,10 @@ class Command {
     bool savebuffer = false;
 
     // Windows console API information
-    HANDLE hStdout;
-    CONSOLE_SCREEN_BUFFER_INFO CSBI;
+    #if _WIN32
+        HANDLE hStdout;
+        CONSOLE_SCREEN_BUFFER_INFO CSBI;
+    #endif
 
     // Key processing functions.
     void ArrowLeft(char character);

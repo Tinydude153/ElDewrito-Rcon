@@ -3,7 +3,6 @@
 
 #include <RconCLI/utils.h>
 #include <RconCLI/sockets/sockets.h>
-#include <RconCLI/debug.h>
 #include <RconCLI/network.h>
 #include <string>
 #include <map>

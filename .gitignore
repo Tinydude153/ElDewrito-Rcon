@@ -3,3 +3,5 @@
 *.log
 *.exe
 *.bin
+*.cfg
+*.sos

@@ -371,7 +371,6 @@ Sockets::Sockets(char* m_host, int m_port, char* data) {
 
     // Initialize Winsock.
     #if _WIN32
-    // Initialize Winsock.
     WSADATA wsaData;
     int initWS;
     initWS = WSAStartup(MAKEWORD(2, 2), &wsaData);

@@ -3,9 +3,12 @@
 
 #include <RconCLI/logging.h>
 #include <RconCLI/websockets.h>
-#include <RconCLI/cmd.h>
 #include <RconCLI/config.h>
 #include <RconCLI/sos/sos.h>
+#include <RconCLI/input.h>
+#if _WIN32
+    #include <RconCLI/cmd.h> // Heavy Windows-based file; Linux implementation will not require this.
+#endif
 #include <chrono>
 #include <ratio>
 #include <string>

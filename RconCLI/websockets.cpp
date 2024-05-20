@@ -29,8 +29,8 @@ Websocket::Websocket(const char* host, int port, std::string protocol) {
 
     } catch (const std::exception& e) {
 
-        std::cout << '[' <<__FUNCTION__ << "] " << e.what() << '\n';
-        std::cerr << '[' <<__FUNCTION__ << "] " << e.what() << '\n';
+        std::cout << '[' <<__FUNCTION__ << "()] " << e.what() << '\n';
+        std::cerr << '[' <<__FUNCTION__ << "()] " << e.what() << '\n';
         throw;
 
     }
@@ -502,26 +502,49 @@ bool Websocket::sendData(Websocket::opcode_type type, char* input) {
     }
     if (m_data) free(m_data);
 
-    /*
-    int gla;
-    int wsSend = send(Websocket::web_socket, (const char*)m_data, strlen(m_data), 0);
-    if (m_data) free(m_data);
-    if (wsSend == SOCKET_ERROR) {
+    return true;
+}
 
-        gla = WSAGetLastError();
-        if (gla == WSAENOTCONN) {
+// Overload for std::string type input.
+bool Websocket::sendData(Websocket::opcode_type type, std::string input) {
 
-            throw "[WEBSOCKET] Connection lost.\n";
+    char* m_data;
 
-        }
-        Network::Log(Websocket::LogSs, "sendData() error: Winsock error ", Network::Protocol::LOG_WEBSOCKET) << WSAGetLastError() << '\n';
-        std::cerr << Websocket::LogSs.rdbuf();
-        printf("\nwebsocket::sendData(Websocket::opcode_type, char*) SOCKET_ERROR: %d\n", WSAGetLastError());
-        WSACleanup();
+    if (type == Websocket::opcode_type::TEXT) {
+
+        m_data = Websocket::compose_frame(Websocket::opcode_type::TEXT, (char*)input.c_str());
+
+    } else if (type == Websocket::opcode_type::BINARY) {
+
+        m_data = Websocket::compose_frame(Websocket::opcode_type::BINARY, (char*)input.c_str());
+
+    } else {
+
         return false;
 
     }
-    */
+
+    if (!checkFrame(m_data)) {
+
+        Network::Log(Websocket::LogSs, "sendData():checkFrame(): invalid frame.", Network::Protocol::LOG_WEBSOCKET) << '\n';
+        std::cerr << Websocket::LogSs.rdbuf();
+        std::cerr << Websocket::frameoutput.rdbuf();
+        Websocket::frameoutput.flush();
+        return false;
+
+    }
+
+    try {
+
+        Websocket::Http->GetSocketClass()->Send((const char*)m_data);
+
+    } catch (const std::exception& e) {
+
+        Network::Log(Websocket::LogSs, "sendData exception: ", Network::Protocol::LOG_WEBSOCKET) << e.what() << '\n';
+        std::cerr << Websocket::LogSs.rdbuf();
+
+    }
+    if (m_data) free(m_data);
 
     return true;
 }
@@ -572,7 +595,6 @@ char* Websocket::receiveData() {
 
         rec = recv(Websocket::web_socket, rec_buf, 512, 0);
         if (rec > 0) {
-            PRINTDEBUG("\nWEBSOCKET_RAW_RECEIVED: %s", rec_buf);
             return rec_buf;
         }
         if (rec <= 0) {
@@ -607,7 +629,7 @@ void Websocket::threadedOutput() {
     
     std::ofstream binfile;
     char* output;
-    while (Websocket::CommandBuf->Active) {
+    while (Input::LoopEnd == false) {
 
         output = Websocket::receiveData();
         if (output) {   
@@ -640,7 +662,8 @@ void Websocket::threadedOutput() {
             printf("%s\n", output);
             printf("\e[G"); // Move to beginning of line
             // Command::Buffer is static.
-            printf("%s", Command::Buffer);
+            //printf("%s", Command::Buffer);
+            std::cout << Input::input_buf;
 
             /*
             lg::lg_sinfo << output << '\n';

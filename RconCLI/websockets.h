@@ -4,9 +4,9 @@
 #include <RconCLI/wsnonce.h>
 #include <RconCLI/http/http.h>
 #include <RconCLI/cmd.h>
-#include <RconCLI/debug.h>
 #include <RconCLI/logging.h>
 #include <RconCLI/console_util.h>
+#include <RconCLI/input.h> 
 
 #include <sstream>
 #include <iostream>
@@ -59,6 +59,8 @@ class Websocket {
     char* compose_frame(opcode_type type, char* input);
     // for sending on binary and text websocket packets on an established socket;
     bool sendData(opcode_type type, char* input);
+    // std::string overload.
+    bool sendData(opcode_type type, std::string input);
     // for sending CLOSE, PING, and PONG websockets packets on an established socket
     bool sendData(opcode_type type);
     // for receiving data on an established socket

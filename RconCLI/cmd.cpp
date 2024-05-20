@@ -6,6 +6,7 @@ std::atomic<bool> Command::Active = true;
 
 Command::Command() {
 
+    #if _WIN32
     // Set Windows console information; primarily used for cursor positioning.
     Command::hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -29,6 +30,7 @@ Command::Command() {
         Command::Active = false;
 
     }
+    #endif
 
     // Cache class instantiation.
         // TODO: De-hardcode the cache size.

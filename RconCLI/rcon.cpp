@@ -18,21 +18,23 @@ Rcon::Rcon() {
     if (Rcon::ReadConfig()) {
 
         SetConsoleTitle("RconCLI - Connecting...");
-        if (Rcon::CreateWebsocket()) {
+        if (Rcon::AnnounceServiceOnly == false) {
+            if (Rcon::CreateWebsocket()) {
 
-            Rcon::Fail = false;
-            Rcon::FailWebsocket = false;
-            if (Rcon::RconMode == Rcon::Mode::RCON) {
-                SetConsoleTitle("RconCLI - Connected : Mode - RCON");
-            } else { SetConsoleTitle("RconCLI - Connected : Mode - SYSTEM"); }
+                Rcon::Fail = false;
+                Rcon::FailWebsocket = false;
+                if (Rcon::RconMode == Rcon::Mode::RCON) {
+                    SetConsoleTitle("RconCLI - Connected : Mode - RCON");
+                } else { SetConsoleTitle("RconCLI - Connected : Mode - SYSTEM"); }
 
-        } else { 
-            // Rcon::Fail is not set because the program should continue running, just in a disconnected state.
-            Rcon::FailWebsocket = true; 
-            if (Rcon::RconMode == Rcon::Mode::RCON) {
-                SetConsoleTitle("RconCLI - Disconnected : Mode - RCON");
-            } else { SetConsoleTitle("RconCLI - Disconnected : Mode - SYSTEM"); }
-        } 
+            } else { 
+                // Rcon::Fail is not set because the program should continue running, just in a disconnected state.
+                Rcon::FailWebsocket = true; 
+                if (Rcon::RconMode == Rcon::Mode::RCON) {
+                    SetConsoleTitle("RconCLI - Disconnected : Mode - RCON");
+                } else { SetConsoleTitle("RconCLI - Disconnected : Mode - SYSTEM"); }
+            } 
+        }
 
     } else { Rcon::Fail = true; }
 
@@ -41,9 +43,9 @@ Rcon::Rcon() {
 bool Rcon::ReadConfig() {
 
     Rcon::Cfg = new Config("config/config.cfg");
-    Rcon::Password = Rcon::Cfg->GetValue("password");
-    Rcon::Address = Rcon::Cfg->GetValue("address");
-    Rcon::RconPort = Rcon::Cfg->GetValue("rcon_port");
+    Rcon::Password = Rcon::Cfg->GetValue("Rcon.Password");
+    Rcon::Address = Rcon::Cfg->GetValue("Server.Address");
+    Rcon::RconPort = Rcon::Cfg->GetValue("Rcon.Port");
     if (Rcon::Password.empty()) {
         Rcon::Fail = true;
         std::cerr << "[CONFIG] Password failed.\n";
@@ -60,12 +62,12 @@ bool Rcon::ReadConfig() {
         return false;  
     }
 
-    std::string announceserv = Rcon::Cfg->GetValue("run_as_announce_service_only");
+    std::string announceserv = Rcon::Cfg->GetValue("Rcon.TimedAnnounce");
     if (announceserv.compare("true") == 0) {
         Rcon::AnnounceServiceOnly = true;
     }
 
-    std::string bindump = Rcon::Cfg->GetValue("binary_dump");
+    std::string bindump = Rcon::Cfg->GetValue("Rcon.System.DumpWebsocketBinary");
     if (bindump.compare("true") == 0) {
         Rcon::BinDump = true;
     }
@@ -175,6 +177,7 @@ void Rcon::RconLoop() {
     
     // Start command-line parsing.
     Command Cmd;
+    Input Terminal;
 
     // My function pointer implementation for callbacks is disgusting but this at least works so I'm done for now lol
     GetRcon::rconref = this;
@@ -185,6 +188,7 @@ void Rcon::RconLoop() {
     if (!Rcon::FailWebsocket) {
         Rcon::Websock->GetCommandBuffer(&Cmd);
     }
+    /*
     while (Cmd.Active) {
 
         // Initialize command input.
@@ -218,6 +222,15 @@ void Rcon::RconLoop() {
 
         }
 
+    }
+    */
+
+    while (Terminal.LoopEnd == false) {
+        Terminal.InputLoop();
+        if (Terminal.SendReady == true) {
+            Rcon::Websock->sendData(Rcon::Websock->opcode_type::TEXT, (char*)Terminal.input_buf.c_str());
+            Terminal.SendReady = false;
+        }
     }
     if (!Rcon::FailWebsocket) Rcon::Websock->sendData(Rcon::Websock->CLOSE);
 
@@ -267,8 +280,8 @@ void Rcon::RconWebsocketThread(Rcon::annsrv announce_server) {
 
 void Rcon::RconAnnounceLoop() {
 
-    std::thread receiveThread;
-    if (!Rcon::FailWebsocket) receiveThread = std::thread(&Websocket::threadedOutput, &*Rcon::Websock);
+    //std::thread receiveThread;
+    //if (!Rcon::FailWebsocket) receiveThread = std::thread(&Websocket::threadedOutput, &*Rcon::Websock);
 
     Rcon::Sos = new SOSerial;
     Rcon::Sos->Deserialize("config/servers.sos");
@@ -288,7 +301,7 @@ void Rcon::RconAnnounceLoop() {
                 Rcon::WSConnections.erase(it->first);
             }
         } catch (const std::exception& e) {
-            std::cerr << '[' << __FUNCTION__ << "] " << e.what() << '\n';
+            std::cerr << '[' << __FUNCTION__ << "()] " << e.what() << '\n';
             std::cerr << "[INFO] " << it->first << " failed to connect.\n";
         }
 
@@ -308,16 +321,13 @@ void Rcon::RconAnnounceLoop() {
     std::string Msg = AnnounceCfg.GetValue("server_0");
     char* msg_ws = (char*)Msg.c_str();
 
-    if (!Msg.empty()) {
+    if (!Rcon::WSConnections.empty()) {
 
         while (true) {
 
             for (std::map<std::string, Websocket*>::iterator it = Rcon::WSConnections.begin(); it != Rcon::WSConnections.end(); it++) {
                 it->second->sendData(Rcon::Websock->opcode_type::TEXT, (char*)AnnounceCfg.GetValue(it->first).c_str());
             }
-            /*if (!Rcon::FailWebsocket) {
-                Rcon::Websock->sendData(Rcon::Websock->opcode_type::TEXT, (char*)Msg.c_str());
-            }*/
             std::this_thread::sleep_for(std::chrono::minutes(5));
 
         }

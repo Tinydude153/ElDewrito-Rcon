@@ -39,9 +39,6 @@ Cache::~Cache() {
 
 void Cache::Push(Cache::Node* node) {
 
-    PRINTDEBUG("\nCURRENT_CACHE_NODE_KEY: %d", node->key);
-    PRINTDEBUG("\nCURRENT_CACHE_NODE_VALUE: %s", node->value);
-    PRINTDEBUG("\nCURRENT_CACHE_NODE_SIZE: %d", node->size);
     node->next = head->next;
     node->next->prev = node;
     node->prev = head;
@@ -86,18 +83,17 @@ void Cache::Insert(char* value) {
     
     // DEBUG : View all node structures each entry to ensure that there are not
     // too many, too little, no missed-deletions, etc.
-    
-    #ifdef DEBUG
-        Cache::Node* cNode = Cache::head;
-        Cache::Node* cNext;
-        while (cNode->next) {
+    /*
+    Cache::Node* cNode = Cache::head;
+    Cache::Node* cNext;
+    while (cNode->next) {
 
-            cNext = cNode->next;
-            if (cNode->value) PRINTDEBUG("\nCACHE_NODE: %s", cNode->value);
-            cNode = cNext;
+        cNext = cNode->next;
+        if (cNode->value) PRINTDEBUG("\nCACHE_NODE: %s", cNode->value);
+        cNode = cNext;
 
-        }
-    #endif
+    }
+    */
 
 }
 
