@@ -298,6 +298,8 @@ void Rcon::RconAnnounceLoop() {
             char* wsPay = Rcon::WSConnections.at(it->first)->parse_payload(wsRec);
             if (strncmp((const char*)wsPay, "accept", strlen("accept"))) {
                 // Remove connection if not accepted.
+                std::cerr << "[ERROR] Password not accepted on " << it->first << "; ignoring.\n";
+                Rcon::WSConnections.at(it->first)->sendData(Rcon::Websock->opcode_type::CLOSE);
                 Rcon::WSConnections.erase(it->first);
             }
         } catch (const std::exception& e) {
@@ -321,9 +323,12 @@ void Rcon::RconAnnounceLoop() {
     std::string Msg = AnnounceCfg.GetValue("server_0");
     char* msg_ws = (char*)Msg.c_str();
 
+    // Set console signals.
+    Input::SetConsoleSignal();
+
     if (!Rcon::WSConnections.empty()) {
 
-        while (true) {
+        while (Input::LoopEnd == false) {
 
             for (std::map<std::string, Websocket*>::iterator it = Rcon::WSConnections.begin(); it != Rcon::WSConnections.end(); it++) {
                 it->second->sendData(Rcon::Websock->opcode_type::TEXT, (char*)AnnounceCfg.GetValue(it->first).c_str());

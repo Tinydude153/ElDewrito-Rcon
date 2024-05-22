@@ -1,6 +1,8 @@
 #ifndef INPUT_H
 #define INPUT_H
 
+#include <RconCLI/console_util.h>
+
 #if _WIN32
     #include <Windows.h>
 #endif
@@ -14,10 +16,12 @@
 class Input {
 
     public:
+    WindowsConsole::Console MainConsole;
     bool SendReady = false;
     static std::string input_buf;
     static std::atomic<bool> LoopEnd;
     void InputLoop();
+    static void SetConsoleSignal();
 
 };
 

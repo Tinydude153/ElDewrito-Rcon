@@ -29,6 +29,21 @@ BOOL WINAPI WindowsConsoleHandler(DWORD dwType) {
 }
 #endif
 
+void Input::SetConsoleSignal() {
+
+    #if _WIN32
+        if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)WindowsConsoleHandler,TRUE)) {
+            std::cerr << "[ERROR] Unable to install WindowsConsoleHandler(DWORD).\n";
+        }
+    #else
+        struct sigaction sa;
+        memset(&sa, 0, sizeof(sa));
+        sa.sa_handler = sigterm_handler;
+        sigaction(SIGTERM | SIGINT, &sa, NULL);
+    #endif
+
+}
+
 void Input::InputLoop() {
 
     #if _WIN32
@@ -38,12 +53,13 @@ void Input::InputLoop() {
     #else
         struct sigaction sa;
         memset(&sa, 0, sizeof(sa));
-        sa.sa_handler = Input::sigterm_handler;
+        sa.sa_handler = sigterm_handler;
         sigaction(SIGTERM | SIGINT, &sa, NULL);
     #endif
 
     this->SendReady = false;
     Input::input_buf.clear();
+    printf("\e[%dd", Input::MainConsole.Size().rows);
     std::getline(std::cin, Input::input_buf); // <string>
     if (Input::input_buf.compare("quit") == 0) {
         Input::LoopEnd = true;
