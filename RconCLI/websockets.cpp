@@ -615,14 +615,14 @@ char* Websocket::receiveData() {
     return NULL;
 }
 
-char* Websocket::GetCommandBuffer(Command* CommandInstance) {
+/*char* Websocket::GetCommandBuffer(Command* CommandInstance) {
 
     char* cmd;
     Websocket::CommandBuf = CommandInstance;
     cmd = Websocket::CommandBuf->Buffer;
     return cmd;
 
-}
+}*/
 
 // Function for looping receiving data on an established socket; for use in a separate thread.
 void Websocket::threadedOutput() {
@@ -659,11 +659,12 @@ void Websocket::threadedOutput() {
             printf("\e7"); // Save cursor position.
             printf("\e[G"); // Move to beginning of line.
             printf("\e[K");  // Clear line beginning from cursor.
-            printf("%s\n", output);
+            //printf("%s\n", output);
             printf("\e[G"); // Move to beginning of line
+            //std::cout << Input::input_buf;
+            printf("\e8"); // Restore cursor position from memory
             // Command::Buffer is static.
             //printf("%s", Command::Buffer);
-            std::cout << Input::input_buf;
 
             /*
             lg::lg_sinfo << output << '\n';

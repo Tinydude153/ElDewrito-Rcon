@@ -3,7 +3,6 @@
 
 #include <RconCLI/wsnonce.h>
 #include <RconCLI/http/http.h>
-#include <RconCLI/cmd.h>
 #include <RconCLI/logging.h>
 #include <RconCLI/console_util.h>
 #include <RconCLI/input.h> 
@@ -17,7 +16,7 @@
 
 class Websocket {
     
-    Command* CommandBuf;
+    //Command* CommandBuf;
     Network::HTTP* Http;
     char* CmdBuffer;
     char* data;
@@ -71,7 +70,7 @@ class Websocket {
     // actual payload itself
     bool checkFrame(char* frame);
     // Returns the input buffer from a Command instance.
-    char* GetCommandBuffer(Command* CommandInstance);
+    //char* GetCommandBuffer(Command* CommandInstance);
     // Inspects a websocket packet for debugging purposes; prints the information.
     void InspectPacket(const char* packet);
 

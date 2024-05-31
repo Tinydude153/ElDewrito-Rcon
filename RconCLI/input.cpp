@@ -2,18 +2,25 @@
 
 std::atomic<bool> Input::LoopEnd = false;
 std::string Input::input_buf;
+std::condition_variable Input::WaitCondition;
+std::mutex Input::WaitConditionMutex;
+std::atomic<int> Input::atbool {0};
 
 void sigterm_handler(int sig) {
 
+    std::cerr << "[SIGINT] RconCLI terminated.\n";
+    exit(1);
     Input::LoopEnd = true;
 
 }
 
 #if _WIN32
 BOOL WINAPI WindowsConsoleHandler(DWORD dwType) {
-
+    
     switch(dwType) {
         case CTRL_C_EVENT:
+            std::cerr << "[SIGINT] RconCLI terminated.\n";
+            exit(1);
             Input::LoopEnd = true;
             std::cin.setstate(std::ios_base::eofbit);
             break;

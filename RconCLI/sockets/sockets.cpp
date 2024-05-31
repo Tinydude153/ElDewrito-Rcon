@@ -1,12 +1,5 @@
 #include <RconCLI/sockets/sockets.h>
 
-//
-// This header file is becoming somewhat obsolete, as most of the socket handling is being migrated
-// into the websocket class in the websocket.h header file. This class may still be used, but on a 
-// smaller scale, only for HTTP purposes. It probably won't handle sockets unless from a handle 
-// created by the websocket class.
-//
-
 const char* Sockets::GetErrorMsg() {
 
 #if _WIN32  

@@ -4,17 +4,17 @@
 #include <RconCLI/logging.h>
 #include <RconCLI/websockets.h>
 #include <RconCLI/config.h>
+#include <RconCLI/cmd.h>
 #include <RconCLI/sos/sos.h>
 #include <RconCLI/input.h>
-#if _WIN32
-    #include <RconCLI/cmd.h> // Heavy Windows-based file; Linux implementation will not require this.
-#endif
+
 #include <chrono>
 #include <ratio>
 #include <string>
 #include <thread>
 #include <atomic>
 #include <map>
+#include <ctime>
 
 namespace Dewrito {
 
@@ -65,6 +65,7 @@ class Rcon {
     bool ReadSos();
     bool CreateWebsocket();
     void RconAnnounceLoop();
+    void TimedAnnounce(Config* cfg);
     void RconLoop();
     void RconWebsocketThread(annsrv announce_server);
     Rcon();

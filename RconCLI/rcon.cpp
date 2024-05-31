@@ -185,10 +185,11 @@ void Rcon::RconLoop() {
     Command::key_callback funcptr_f4 = &Rcon::keycb_f4;
     Cmd.CustomKey(Rcon::Keycode::F5, funcptr_f5);
     Cmd.CustomKey(Rcon::Keycode::F4, funcptr_f4);
+    /*
     if (!Rcon::FailWebsocket) {
         Rcon::Websock->GetCommandBuffer(&Cmd);
     }
-    /*
+    
     while (Cmd.Active) {
 
         // Initialize command input.
@@ -320,12 +321,12 @@ void Rcon::RconAnnounceLoop() {
     }
 
     Config AnnounceCfg("config/announce.cfg");
-    std::string Msg = AnnounceCfg.GetValue("server_0");
-    char* msg_ws = (char*)Msg.c_str();
 
     // Set console signals.
     Input::SetConsoleSignal();
 
+    // Currently, the thread simply sleeps until a given time interval then continues the loop, then repeat.
+    // Therefore, to stop the program at this time, a kill signal must be sent. Hopefully I can make this better at some point.
     if (!Rcon::WSConnections.empty()) {
 
         while (Input::LoopEnd == false) {
@@ -333,9 +334,12 @@ void Rcon::RconAnnounceLoop() {
             for (std::map<std::string, Websocket*>::iterator it = Rcon::WSConnections.begin(); it != Rcon::WSConnections.end(); it++) {
                 it->second->sendData(Rcon::Websock->opcode_type::TEXT, (char*)AnnounceCfg.GetValue(it->first).c_str());
             }
-            std::this_thread::sleep_for(std::chrono::minutes(5));
+            std::this_thread::sleep_for(std::chrono::minutes(3));
+
+            //Input::WaitCondition.wait_until(lk, now + std::chrono::minutes(5));
 
         }
+
 
     }
 
